@@ -8,6 +8,7 @@
 .ps.turn { background: linear-gradient(#f6d36a, #d9a426); }
 .ps.away { opacity: .5; text-decoration: line-through; }
 .ps.me { box-shadow: 0 2px 0 #5a3a1e, inset 0 0 0 2px var(--ink); }
+.ps-cpu { font-style: normal; font-size: 9px; font-weight: 900; letter-spacing: .1em; margin-left: 5px; padding: 1px 4px; border-radius: 3px; color: var(--paper); background: var(--ink); vertical-align: 1px; }
 
 /* the game sheet */
 .sheetbar { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 10px; }

@@ -50,6 +50,7 @@ Il primo giocatore è scelto a caso.
 - Giocatori: da 4 a 6. Slider a 0 all'inizio, primo giocatore a caso.
 - Sconfitta: 3 statistiche diverse in Overflow nel corso della partita.
 - Nel Buffer senza carte Base in mano: una ripescata automatica; se ancora niente, il turno passa.
+- Da confermare (aggiunta nel gioco digitale): se al momento della ripescata nel mazzo non c'è più nessuna carta Base, prima si rimescolano gli scarti nel mazzo. Le carte in mano tornano sempre nel mazzo, quindi il mazzo non finisce quasi mai: senza questa regola, una volta giocate tutte le carte Base il tavolo resterebbe bloccato nel Buffer per sempre.
 - Blackout: se la carta pescata alla cieca non si può giocare (Buffer), non ha effetto e va negli scarti. Se la carta chiede una scelta, la scelta è casuale.
 - BLATERO (Jolly): valore da 0 a 15, e non attiva mai un Imprevisto.
 - Vittoria anche dopo l'effetto di un Imprevisto.

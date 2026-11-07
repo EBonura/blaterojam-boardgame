@@ -341,6 +341,10 @@ function startTurn(g: GameState) {
     // Buffer and no Base card: one automatic redraw, then the turn passes.
     log(g, 'redraw')
     returnHand(g)
+    // Hands go back into the deck, so it rarely runs out and the discards rarely come
+    // back. Once every Base card has been played the Buffer would lock the table for
+    // good, so the discards are shuffled back in before the redraw.
+    if (!g.deck.some((c) => isLegal(g, c))) (g.deck = shuffle(g, [...g.deck, ...g.discard])), (g.discard = [])
     draw(g, next.drawTwo ? 2 : 4)
     if (hasLegal(g)) return
     log(g, 'pass')
