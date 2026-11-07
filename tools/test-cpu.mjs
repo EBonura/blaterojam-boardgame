@@ -14,7 +14,7 @@ const CHROME =
 
 const server = process.env.BASE_URL ? null : await createServer({ server: { port: 5198, strictPort: true }, logLevel: 'error' })
 await server?.listen()
-// CPUs wait 80 ms instead of 1.5 s (tools/browser-env.mjs), so a whole game fits in a test run.
+// CPUs wait 250 ms instead of 1.5 s (tools/browser-env.mjs), so a whole game fits in a test run.
 const URL = (process.env.BASE_URL ?? 'http://localhost:5198/')
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--mute-audio'] })
