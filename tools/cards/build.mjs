@@ -149,6 +149,17 @@ function effect(card, top, bottom) {
     const y0 = top + (space - block) / 2 + big * 0.75
     out += `<text x="34.5" y="${y0}" text-anchor="middle" font-family="${SANS}" font-weight="900" font-size="${big}" fill="${fill}">${esc(r.num)}</text>`
     out += `<text x="34.5" y="${y0 + 4.5}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="3" letter-spacing="0.2" fill="${fill}">${tspans(label, 34.5, 3.3)}</text>`
+  } else if (rows.length >= 3) {
+    // Three or four effects: cells of number over label, 2x2, or two above one centred.
+    const rowH = space / 2
+    const num = Math.min(9, rowH * 0.55)
+    rows.forEach((r, i) => {
+      const fill = INK_TONE[r.tone]
+      const x = rows.length === 3 && i === 2 ? 34.5 : i % 2 === 0 ? 21 : 48
+      const y = top + rowH * Math.floor(i / 2) + rowH / 2 + num * 0.2
+      out += `<text x="${x}" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="900" font-size="${num}" fill="${fill}">${esc(r.num)}</text>`
+      out += `<text x="${x}" y="${y + 3.4}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="2.6" letter-spacing="0.2" fill="${fill}">${esc(r.short)}</text>`
+    })
   } else {
     const step = space / rows.length
     const num = Math.min([0, 13, 9, 7, 5.6][rows.length], step * 0.82)

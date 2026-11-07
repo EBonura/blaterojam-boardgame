@@ -232,9 +232,20 @@
 .verdict.win { background: var(--mint); color: #000; }
 .verdict.warn { background: var(--pink); color: #000; }
 
-/* Two or more effects: one tidy table, numbers right-aligned, short labels left-aligned on one line. */
-.card-fx:not(.rows-0):not(.rows-1) { display: grid; grid-template-columns: auto auto; justify-content: center; align-content: center; column-gap: 2.5cqw; row-gap: .8cqw; }
-.card-fx:not(.rows-0):not(.rows-1) .fx { display: contents; }
-.card-fx:not(.rows-0):not(.rows-1) .fx-num { text-align: right; }
-.card-fx:not(.rows-0):not(.rows-1) .fx-label { text-align: left; white-space: nowrap; max-width: none; align-self: center; }
-.card-fx:not(.rows-0):not(.rows-1) .card-quote { grid-column: 1 / -1; }
+/* Two effects: a tidy table, numbers right-aligned, short labels left-aligned on one line. */
+.card-fx.rows-2 { display: grid; grid-template-columns: auto auto; justify-content: center; align-content: center; column-gap: 2.5cqw; row-gap: .8cqw; }
+.card-fx.rows-2 .fx { display: contents; }
+.card-fx.rows-2 .fx-num { text-align: right; }
+.card-fx.rows-2 .fx-label { text-align: left; white-space: nowrap; max-width: none; align-self: center; }
+/* Three or four effects: cells of number over label, 2x2 (four) or two above one centred (three). */
+.card-fx.rows-3, .card-fx.rows-4 { display: grid; grid-template-columns: 1fr 1fr; align-content: center; row-gap: 1.5cqw; column-gap: 1cqw; }
+.card-fx.rows-3 .fx, .card-fx.rows-4 .fx { flex-direction: column; gap: .5cqw; }
+.card-fx.rows-3 .fx:nth-child(3) { grid-column: 1 / -1; }
+.card-fx.rows-3 .fx-num, .card-fx.rows-4 .fx-num { font-size: 13cqw; }
+.card-fx.rows-3 .fx-label, .card-fx.rows-4 .fx-label { font-size: 5.5cqw; text-align: center; max-width: none; white-space: nowrap; }
+.card-fx .card-quote { grid-column: 1 / -1; }
+.card.compact .rows-3 .fx-num, .card.compact .rows-4 .fx-num { font-size: 17cqw; }
+.card.compact .rows-3 .fx-label, .card.compact .rows-4 .fx-label { font-size: 7.5cqw; }
+.card.compact:has(.rows-4) .card-screen { display: none; }
+.card.compact:has(.rows-4) .card-fx { flex: 1; }
+.card.compact:has(.rows-4) .card-fx::before { display: none; }
