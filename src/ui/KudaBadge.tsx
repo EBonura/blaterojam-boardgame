@@ -1,4 +1,4 @@
-import { t } from '../i18n'
+import { t } from '../text'
 
 // KUDA Games credit. Drop their real logo at public/brand/kuda-logo.svg (or .png
 // and change the src); the current file is a text placeholder.

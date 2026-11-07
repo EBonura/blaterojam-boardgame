@@ -10,7 +10,6 @@
 //   you back in your seat. On a different device you can take over the seat of
 //   a player who isn't connected.
 import { joinRoom as joinNostr, type Room } from 'trystero'
-import { joinRoom as joinMqtt } from '@trystero-p2p/mqtt'
 import { signal, computed } from '@preact/signals'
 import { reduce, hostOf, newRoom, type Action, type RoomState } from '../room/state'
 import { load, save, deviceId } from '../storage'
@@ -18,7 +17,9 @@ import { load, save, deviceId } from '../storage'
 const APP_ID = 'blaterojam-boardgame-taranto-2026-v1'
 // Signaling goes through public Nostr relays by default. `?net=mqtt` switches to
 // public MQTT brokers in case the Nostr relays misbehave on the day.
-const joinRoom = new URLSearchParams(location.search).get('net') === 'mqtt' ? joinMqtt : joinNostr
+// The MQTT client is large, so it is only downloaded when asked for.
+const joinRoom =
+  new URLSearchParams(location.search).get('net') === 'mqtt' ? (await import('@trystero-p2p/mqtt')).joinRoom : joinNostr
 const HEARTBEAT_MS = 4000
 const STALE_MS = 13000
 

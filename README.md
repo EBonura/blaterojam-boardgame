@@ -4,7 +4,7 @@ A cooperative board game about making a game at a game jam, for 3 to 6 players.
 
 **Game design: [KUDA Games](#credits).** Digital version made at the Taranto game jam (theme: *anello*).
 
-Playable on itch.io, mobile first, in Italian and English.
+Playable on itch.io, mobile first, in Italian.
 
 ## How online play works
 

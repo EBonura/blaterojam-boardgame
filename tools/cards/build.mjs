@@ -1,6 +1,6 @@
 // Builds card art and print-ready cards from src/cards/cards.json.
 //   public/cards/art/<id>.svg      pixel art used in the game (32x24 grid)
-//   print/<lang>/<id>.svg          full card, 63x88 mm trim + 3 mm bleed (69x94 mm)
+//   print/<id>.svg                 full card, 63x88 mm trim + 3 mm bleed (69x94 mm)
 // Run: npm run cards
 import fs from 'node:fs'
 import path from 'node:path'
@@ -51,11 +51,11 @@ function wrap(text, widthMm, sizeMm) {
   return lines
 }
 
-function printCard(card, kind, art, lang) {
+function printCard(card, kind, art) {
   const W = 69, H = 94 // mm, includes 3 mm bleed on each side
-  const title = card.title[lang]
+  const title = card.title
   const titleSize = title.length > 16 ? 3.6 : 4.4
-  const body = wrap(card.text[lang], 48, 3).map((l, i) => `<tspan x="34.5" dy="${i ? 4 : 0}">${esc(l)}</tspan>`).join('')
+  const body = wrap(card.text, 48, 3).map((l, i) => `<tspan x="34.5" dy="${i ? 4 : 0}">${esc(l)}</tspan>`).join('')
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}mm" height="${H}mm" viewBox="0 0 ${W} ${H}">
   <!-- trim box: x 3..66, y 3..91. Safe area: 3 mm inside the trim. -->
   <rect width="${W}" height="${H}" fill="${kind.color}"/>
@@ -65,7 +65,7 @@ function printCard(card, kind, art, lang) {
     <rect width="${ART_W}" height="${ART_H}" fill="#14203f"/>${art}
   </svg>
   <rect x="8.5" y="57.5" width="52" height="5" rx="1" fill="${kind.color}"/>
-  <text x="34.5" y="61.1" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-weight="800" font-size="3" letter-spacing="0.4" fill="${PAL[0]}">${esc(kind.label[lang].toUpperCase())}</text>
+  <text x="34.5" y="61.1" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-weight="800" font-size="3" letter-spacing="0.4" fill="${PAL[0]}">${esc(kind.label.toUpperCase())}</text>
   <text x="34.5" y="68.5" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="3" fill="${PAL[7]}">${body}</text>
   <text x="34.5" y="86.3" text-anchor="middle" font-family="system-ui, Helvetica, Arial, sans-serif" font-size="1.8" fill="${PAL[13]}">BLATERO GAME JAM · KUDA GAMES</text>
 </svg>
@@ -74,7 +74,7 @@ function printCard(card, kind, art, lang) {
 
 const artDir = path.join(root, 'public/cards/art')
 fs.mkdirSync(artDir, { recursive: true })
-for (const lang of ['it', 'en']) fs.mkdirSync(path.join(root, 'print', lang), { recursive: true })
+fs.mkdirSync(path.join(root, 'print'), { recursive: true })
 
 for (const card of data.cards) {
   const kind = data.kinds[card.kind]
@@ -82,6 +82,6 @@ for (const card of data.cards) {
   const art = await artSvgBody(card.id)
   fs.writeFileSync(path.join(artDir, `${card.id}.svg`),
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${ART_W} ${ART_H}" shape-rendering="crispEdges">${art}</svg>\n`)
-  for (const lang of ['it', 'en']) fs.writeFileSync(path.join(root, 'print', lang, `${card.id}.svg`), printCard(card, kind, art, lang))
+  fs.writeFileSync(path.join(root, 'print', `${card.id}.svg`), printCard(card, kind, art))
 }
 console.log(`built ${data.cards.length} cards`)

@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks'
-import { t, lang, setLang } from '../i18n'
+import { t } from '../text'
 import { load, save } from '../storage'
 import { roomState, status, connected, hostPresence, myId, amHost, createRoom, enterRoom, leaveRoom, dispatch } from '../net/session'
 import { hostOf } from '../room/state'
@@ -12,23 +12,10 @@ export function App() {
     <div class="app">
       <header class="topbar">
         <span class="brand">BLATERO JAM</span>
-        <LangToggle />
       </header>
       <main class="screen">
         {status.value === 'idle' ? <Home /> : !s ? <Searching /> : s.phase === 'lobby' ? <Lobby /> : <Game />}
       </main>
-    </div>
-  )
-}
-
-function LangToggle() {
-  return (
-    <div class="lang" role="group" aria-label="Language">
-      {(['it', 'en'] as const).map((l) => (
-        <button class={lang.value === l ? 'on' : ''} onClick={() => setLang(l)} aria-pressed={lang.value === l}>
-          {l.toUpperCase()}
-        </button>
-      ))}
     </div>
   )
 }
@@ -168,12 +155,12 @@ function Game() {
       <PlayerList />
       {!seated && <ClaimSeat />}
       <div class="turn">
-        <span>Turn {g.turn + 1}</span>
+        <span>{t('turn', { n: g.turn + 1 })}</span>
         <strong>{turnName}</strong>
       </div>
       {turnOf === myId.value && (
         <button class="primary" onClick={() => dispatch({ type: 'move', id: myId.value, move: { type: 'endTurn' } })}>
-          End turn
+          {t('endTurn')}
         </button>
       )}
       <button class="ghost" onClick={leaveRoom}>
