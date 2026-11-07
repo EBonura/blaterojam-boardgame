@@ -110,7 +110,7 @@ function PlayerList() {
             {p.cpu && amHost.value && s.phase === 'lobby' && (
               <button class="cpu-remove" aria-label={t('removeCpu', { name: p.name })} title={t('removeCpu', { name: p.name })}
                 onClick={() => dispatch({ type: 'removeCpu', id: myId.value, cpu: p.id })}>
-                ✕
+                X
               </button>
             )}
           </li>

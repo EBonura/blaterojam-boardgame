@@ -15,8 +15,13 @@ const data = JSON.parse(fs.readFileSync(path.join(root, 'src/cards/cards.json'),
 // PICO-8 palette
 export const PAL = ['#000000', '#1d2b53', '#7e2553', '#008751', '#ab5236', '#5f574f', '#c2c3c7', '#fff1e8',
   '#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8', '#ffccaa']
-const SANS = 'system-ui, Helvetica, Arial, sans-serif'
-const SERIF = 'Georgia, serif'
+// One font, as in the game: Silkscreen, embedded in every SVG so viewers and printers show it without installing anything.
+const SANS = "'Silkscreen', monospace"
+const SERIF = SANS
+const FONT_DIR = path.join(root, 'node_modules/@fontsource/silkscreen/files')
+const fontFace = (w) => ['latin', 'latin-ext'].map((sub) =>
+  `@font-face{font-family:'Silkscreen';font-weight:${w};src:url(data:font/woff2;base64,${fs.readFileSync(path.join(FONT_DIR, `silkscreen-${sub}-${w}-normal.woff2`)).toString('base64')}) format('woff2')}`).join('')
+const FONT_CSS = `<style>${fontFace(400)}${fontFace(700)}</style>`
 const AUTHORS = 'BONNIE GAMES · KUDA GAMES'
 const INK = '#3b2616'
 const INK_TONE = { gd: '#b4560a', prog: '#1d5b9b', graf: '#a52a68', audio: '#2e7a2e', neg: '#a3122a', any: '#7a4d00' }
@@ -56,7 +61,7 @@ async function loadArt(id) {
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /** Greedy word wrap by estimated character width. */
-function wrap(text, widthMm, sizeMm, k = 0.55) {
+function wrap(text, widthMm, sizeMm, k = 0.82) {
   const max = Math.floor(widthMm / (sizeMm * k))
   const lines = []
   let line = ''
@@ -115,8 +120,8 @@ function frameAndParchment(frame) {
 
 function title(text) {
   const up = text.toUpperCase()
-  const size = up.length > 18 ? 3.4 : up.length > 12 ? 4 : 4.8
-  const lines = wrap(up, 50, size, 0.64)
+  const size = up.length > 18 ? 2.9 : up.length > 12 ? 3.3 : 4
+  const lines = wrap(up, 50, size, 0.82)
   const y = 11.6 - ((lines.length - 1) * size * 1.1) / 2 + size * 0.36
   return `<text x="34.5" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="${size}" letter-spacing="0.15" fill="${INK}">${tspans(lines, 34.5, size * 1.1)}</text>`
 }
@@ -138,19 +143,19 @@ function effect(card, top, bottom) {
   if (!rows) {
     const lines = wrap(card.text, 46, 3.6)
     const y = top + h / 2 - ((lines.length - 1) * 4.5) / 2 + 1.3
-    return `<text x="34.5" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="600" font-size="3.6" fill="${INK}">${tspans(lines, 34.5, 4.5)}</text>`
+    return `<text x="34.5" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="400" font-size="3.6" fill="${INK}">${tspans(lines, 34.5, 4.5)}</text>`
   }
-  const quote = card.quote ? card.quote.flatMap((l) => wrap(l, 48, 2.3, 0.46)) : []
+  const quote = card.quote ? card.quote.flatMap((l) => wrap(l, 54, 1.6, 0.72)) : []
   const space = h - (quote.length ? quote.length * 3 + 1 : 0)
   let out = ''
   if (rows.length === 1) {
     const r = rows[0], fill = INK_TONE[r.tone]
     const big = Math.min(14, space * 0.55)
-    const label = wrap(r.label.toUpperCase(), 48, 3, 0.62)
+    const label = wrap(r.label.toUpperCase(), 48, 2.6, 0.82)
     const block = big * 0.75 + 1.5 + label.length * 3.3
     const y0 = top + (space - block) / 2 + big * 0.75
-    out += `<text x="34.5" y="${y0}" text-anchor="middle" font-family="${SANS}" font-weight="900" font-size="${big}" fill="${fill}">${esc(r.num)}</text>`
-    out += `<text x="34.5" y="${y0 + 4.5}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="3" letter-spacing="0.2" fill="${fill}">${tspans(label, 34.5, 3.3)}</text>`
+    out += `<text x="34.5" y="${y0}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="${big}" fill="${fill}">${esc(r.num)}</text>`
+    out += `<text x="34.5" y="${y0 + 4.5}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="2.6" letter-spacing="0.2" fill="${fill}">${tspans(label, 34.5, 3.3)}</text>`
   } else if (rows.length >= 3) {
     // Three or four effects: cells of number over label, 2x2, or two above one centred.
     const rowH = space / 2
@@ -159,7 +164,7 @@ function effect(card, top, bottom) {
       const fill = INK_TONE[r.tone]
       const x = rows.length === 3 && i === 2 ? 34.5 : i % 2 === 0 ? 21 : 48
       const y = top + rowH * Math.floor(i / 2) + rowH / 2 + num * 0.2
-      out += `<text x="${x}" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="900" font-size="${num}" fill="${fill}">${esc(r.num)}</text>`
+      out += `<text x="${x}" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="${num}" fill="${fill}">${esc(r.num)}</text>`
       out += `<text x="${x}" y="${y + 3.4}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="2.6" letter-spacing="0.2" fill="${fill}">${esc(r.short)}</text>`
     })
   } else {
@@ -169,15 +174,16 @@ function effect(card, top, bottom) {
       const cy = top + step * (i + 0.5) + num * 0.36
       const fill = INK_TONE[r.tone]
       const ls = Math.max(2.4, Math.min(3.4, num * 0.42))
-      out += `<text x="30" y="${cy}" text-anchor="end" font-family="${SANS}" font-weight="900" font-size="${num}" fill="${fill}">${esc(r.num)}</text>`
+      out += `<text x="30" y="${cy}" text-anchor="end" font-family="${SANS}" font-weight="700" font-size="${num}" fill="${fill}">${esc(r.num)}</text>`
       out += `<text x="32" y="${cy - num * 0.36 + ls * 0.36}" font-family="${SANS}" font-weight="700" font-size="${ls}" fill="${fill}">${esc(r.label.toUpperCase())}</text>`
     })
   }
-  if (quote.length) out += `<text x="34.5" y="${top + space + 1.8}" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-size="2.3" fill="${INK}">${tspans(quote, 34.5, 3)}</text>`
+  if (quote.length) out += `<text x="34.5" y="${top + space + 1.8}" text-anchor="middle" font-family="${SERIF}" font-size="1.6" fill="${INK}">${tspans(quote, 34.5, 2.3)}</text>`
   return out
 }
 
 const svg = (inner) => `<svg xmlns="http://www.w3.org/2000/svg" width="69mm" height="94mm" viewBox="0 0 69 94">
+  ${FONT_CSS}
   <!-- trim box: x 3..66, y 3..91. Safe area: 3 mm inside the trim. -->
   ${inner}
 </svg>
@@ -196,13 +202,13 @@ function printCard(card, frame, art) {
 function printSheet(sheet, art) {
   const rows = DISPLAY_ORDER.map((id, i) => {
     const y = 66.2 + i * 5.2
-    return `<text x="11" y="${y}" font-family="${SANS}" font-weight="700" font-size="3.3" fill="${INK_TONE[id]}">${esc(STAT_LABEL[id].toUpperCase())}</text>
-  <text x="58" y="${y + 0.4}" text-anchor="end" font-family="${SANS}" font-weight="900" font-size="5" fill="${INK}">${sheet.target[id]}</text>`
+    return `<text x="11" y="${y}" font-family="${SANS}" font-weight="700" font-size="2.7" fill="${INK_TONE[id]}">${esc(STAT_LABEL[id].toUpperCase())}</text>
+  <text x="58" y="${y + 0.4}" text-anchor="end" font-family="${SANS}" font-weight="700" font-size="5" fill="${INK}">${sheet.target[id]}</text>`
   }).join('\n  ')
   return svg(`${frameAndParchment(SHEET_FRAME)}
   ${title(sheet.title)}
   ${rule(17.5)}
-  <text x="34.5" y="21.3" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-size="2.8" fill="${INK}">Scheda videogioco · ${esc(sheet.difficulty)}</text>
+  <text x="34.5" y="21.3" text-anchor="middle" font-family="${SERIF}" font-size="2.1" fill="${INK}">Scheda videogioco · ${esc(sheet.difficulty)}</text>
   ${artScreen(art, 24, 32)}
   ${rule(60.5)}
   ${rows}

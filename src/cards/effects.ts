@@ -12,7 +12,7 @@ export type Row = { num: string; label: string; short: string; tone: Tone }
 
 type AnyEffect = { type: string; deltas?: Partial<Record<StatId, number>>; amount?: number; min?: number; max?: number; stat?: StatId; a?: StatId; b?: StatId; value?: number }
 
-const sign = (n: number) => (n > 0 ? `+${n}` : `−${-n}`)
+const sign = (n: number) => (n > 0 ? `+${n}` : `-${-n}`)
 
 /** Big-number rows for an effect, or null when it's a rule best said in words. */
 export function effectRows(e: AnyEffect): Row[] | null {
@@ -34,7 +34,7 @@ export function effectRows(e: AnyEffect): Row[] | null {
     case 'setAll':
       return [{ num: String(e.value), label: 'ogni statistica', short: 'TUTTE', tone: 'neg' }]
     case 'swap':
-      return [{ num: '⇄', label: `${STAT_LABEL[e.a!]} e ${STAT_LABEL[e.b!]}`, short: `${STAT_SHORT[e.a!]}/${STAT_SHORT[e.b!]}`, tone: 'neg' }]
+      return [{ num: '<>', label: `${STAT_LABEL[e.a!]} e ${STAT_LABEL[e.b!]}`, short: `${STAT_SHORT[e.a!]}/${STAT_SHORT[e.b!]}`, tone: 'neg' }]
     default:
       return null
   }

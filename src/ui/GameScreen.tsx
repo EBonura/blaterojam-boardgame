@@ -159,7 +159,7 @@ function Bar({ st, v, from, t, lost, flash, next, boom }: { st: Stat; v: number;
       aria-label={`${STAT_NAME[st]} ${v}${next !== v ? `, diventerebbe ${next}` : ''}, obiettivo ${t}`}>
       <span class="bar-name">
         {STAT_SHORT[st]}
-        {lost && <i class="lost" title="Già andata in overflow">✕</i>}
+        {lost && <i class="lost" title="Già andata in overflow">X</i>}
       </span>
       <div class="boxes" key={`boxes-${gen}`}>
         {Array.from({ length: OVERFLOW }, (_, i) => {
@@ -342,7 +342,7 @@ function Stage({ g, picked, onPreview, onClose }: { g: GameState; picked: Picked
           )}
           {card.effect.type === 'set' && stat && (
             <div class="stepper">
-              <button onClick={() => setValue(Math.max(0, value - 1))} aria-label="Meno">−</button>
+              <button onClick={() => setValue(Math.max(0, value - 1))} aria-label="Meno">-</button>
               <b class="px">{value}</b>
               <button onClick={() => setValue(Math.min(JOLLY_MAX, value + 1))} aria-label="Più">+</button>
             </div>

@@ -8,8 +8,10 @@
   --tex-wood: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .35' numOctaves='3' seed='5'/%3E%3CfeColorMatrix values='0 0 0 0 .12 0 0 0 0 .06 0 0 0 0 .03 0 0 0 .9 -.15'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --tex-blot: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012' numOctaves='3' seed='8'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .28 0 0 0 0 .12 0 0 0 1.1 -.45'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --tex-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .22 0 0 0 0 .1 0 0 0 .28 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* One font for the whole game: Silkscreen (bundled, works offline). */
+  --font: 'Silkscreen', monospace;
   color-scheme: dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; color: var(--light); }
@@ -21,7 +23,7 @@ body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent;
     radial-gradient(circle at 85% 30%, var(--mint) 0 1px, transparent 1.6px) 0 0 / 170px 130px,
     linear-gradient(var(--navy), var(--night)); background-attachment: fixed; }
 #app { min-height: 100dvh; }
-.px { font-family: 'Silkscreen', monospace; letter-spacing: .02em; }
+.px { font-family: var(--font); letter-spacing: .02em; }
 
 /* Cream "label" surface, like the cassette label: add .parch to a panel. */
 .parch { color: #1d2b53; background: var(--cream); border-radius: 10px; box-shadow: 0 0 0 3px #2a2a34, 0 6px 14px rgba(0, 0, 0, .45); }
@@ -43,9 +45,9 @@ input:focus { outline: 3px solid var(--yellow); outline-offset: 2px; }
 
 /* home */
 .home, .lobby { display: flex; flex-direction: column; gap: 14px; padding: 16px 0 24px; }
-.home h1 { font-family: 'Silkscreen', monospace; font-size: clamp(30px, 9vw, 44px); line-height: 1; margin: 6px 0 10px; }
+.home h1 { font-family: var(--font); font-size: clamp(30px, 9vw, 44px); line-height: 1; margin: 6px 0 10px; }
 .home h1 .c1 { color: var(--mint); } .home h1 .c2 { color: var(--yellow); } .home h1 .c3 { color: var(--pink); } .home h1 .c4 { color: var(--blue); }
-.home h1 small { display: block; font-family: system-ui, sans-serif; font-size: 16px; font-weight: 600; color: var(--cream); margin-top: 10px; letter-spacing: 0; }
+.home h1 small { display: block; font-family: var(--font); font-size: 16px; font-weight: 600; color: var(--cream); margin-top: 10px; letter-spacing: 0; }
 .field { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 14px; }
 .join { display: flex; gap: 8px; }
 .join .code { text-transform: uppercase; letter-spacing: .25em; font-weight: 800; text-align: center; }
@@ -57,7 +59,7 @@ input:focus { outline: 3px solid var(--yellow); outline-offset: 2px; }
 /* lobby */
 .roomcode { display: flex; flex-direction: column; align-items: center; padding: 12px; position: relative; overflow: hidden; }
 .roomcode::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, var(--mint) 0 25%, var(--yellow) 0 50%, var(--pink) 0 75%, var(--blue) 0); }
-.roomcode span { font-size: 13px; font-style: italic; color: #555; margin-top: 4px; }
+.roomcode span { font-size: 13px;  color: #555; margin-top: 4px; }
 .roomcode strong { font-size: 46px; font-weight: 900; letter-spacing: .2em; }
 .hint { color: var(--muted); margin: 0; text-align: center; font-size: 14px; }
 h2 { margin: 6px 0 0; font-size: 18px; }
@@ -67,7 +69,7 @@ h2 { margin: 6px 0 0; font-size: 18px; }
 .players li.away .dot { background: #8a8a96; box-shadow: none; }
 .players li.away .pname { opacity: .5; }
 .players .pname { flex: 1; font-weight: 800; }
-.players em { font-style: italic; font-size: 13px; color: #555; }
+.players em {  font-size: 13px; color: #555; }
 .claim { display: flex; flex-direction: column; gap: 8px; }
 .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
 .spinner { width: 42px; height: 42px; border-radius: 50%; border: 5px solid rgba(243, 230, 200, .2); border-top-color: var(--yellow); animation: spin 1s linear infinite; }
@@ -76,7 +78,7 @@ h2 { margin: 6px 0 0; font-size: 18px; }
 
 /* connection help (only shown when a device is stuck) */
 .netstatus { display: flex; flex-direction: column; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); max-width: 360px; margin: 0 auto; text-align: center; }
-.ns-diag { font-family: Georgia, serif; font-style: italic; }
+.ns-diag { font-family: var(--font);  }
 .ns-hint { margin: 0; color: var(--light); background: rgba(0, 0, 0, .3); border-radius: 8px; padding: 8px 10px; line-height: 1.35; }
 .ns-err { font-size: 10px; opacity: .6; word-break: break-word; }
 .players li.cpu .dot { background: var(--gold-dark); box-shadow: 0 0 0 2px rgba(138, 90, 16, .3); }
