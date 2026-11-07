@@ -13,7 +13,8 @@ There's no game server. Players meet through public signaling relays (Nostr, via
 - Every device keeps a full copy of the game and saves it locally.
 - The host is whoever is connected with the lowest seat. If the host's phone locks, the next player takes over.
 - Typing the same room code again on the same device puts you back in your seat. On a different device you can take over the seat of a player who isn't connected.
-- `?net=mqtt` switches signaling to public MQTT brokers, in case the Nostr relays misbehave.
+- Players can switch signaling between Nostr and MQTT in the game (every device in a room must match).
+- When phones can't link directly (mobile data, Wi-Fi that isolates devices), traffic goes through a TURN relay (Metered.ca free tier). Credentials go in the git-ignored `.env.local` (`VITE_TURN_URLS`, `VITE_TURN_USER`, `VITE_TURN_PASS`) and are baked into the build. `?relay=1` forces relay-only, for testing: `Q='?relay=1' node tools/test-zip.mjs`.
 
 ## Develop
 

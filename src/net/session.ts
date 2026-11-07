@@ -36,6 +36,7 @@ const TURN = env.VITE_TURN_URLS && env.VITE_TURN_USER && env.VITE_TURN_PASS
   ? [{ urls: String(env.VITE_TURN_URLS).split(','), username: env.VITE_TURN_USER, credential: env.VITE_TURN_PASS }]
   : undefined
 export const hasTurn = !!TURN
+const FORCE_RELAY = new URLSearchParams(location.search).get('relay') === '1'
 
 /** What the connection is doing, shown on screen so a stuck join can be diagnosed. */
 export const netInfo = signal({ relays: 0, relaysTotal: 0, peers: 0, error: '' })
@@ -199,6 +200,8 @@ function openRoom(c: string) {
     password: `blatero-${c}`,
     ...(net.value === 'nostr' ? { relayConfig: { urls: NOSTR_RELAYS } } : {}),
     ...(TURN ? { turnConfig: TURN } : {}),
+    // ?relay=1 (testing): only connect through the TURN relay, as on a network that blocks direct links.
+    ...(TURN && FORCE_RELAY ? { rtcConfig: { iceServers: TURN, iceTransportPolicy: 'relay' as const } } : {}),
   }
   room = join(config, `room-${c}`, {
     // Peers found each other but WebRTC could not link them: usually a network that needs TURN.
