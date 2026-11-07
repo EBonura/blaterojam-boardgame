@@ -6,12 +6,12 @@
     { "id": "audio", "name": "Audio" }
   ],
   "frames": {
-    "verde": { "color": "#00e436", "ink": "#000000" },
-    "rosso": { "color": "#ff004d", "ink": "#fff1e8" },
-    "giallo": { "color": "#ffec27", "ink": "#000000" },
+    "verde": { "color": "#4e7a3c", "ink": "#000000" },
+    "rosso": { "color": "#8e2a22", "ink": "#fff1e8" },
+    "giallo": { "color": "#b8862b", "ink": "#000000" },
     "arcobaleno": { "color": "#ff77a8", "ink": "#000000", "rainbow": true },
     "argento": { "color": "#c2c3c7", "ink": "#000000", "foil": true },
-    "bianco": { "color": "#fff1e8", "ink": "#000000" }
+    "bianco": { "color": "#d9cdb4", "ink": "#000000" }
   },
   "levels": {
     "base": "Base",

@@ -1,7 +1,7 @@
 // Builds card art and print-ready cards from src/cards/cards.json.
 //   public/cards/art/<id>.svg   pixel art used in the game (32x24 grid, or the size an art module exports)
 //   print/<id>.svg              full card, 63x88 mm trim + 3 mm bleed (69x94 mm)
-// Look: KUDA Games' card style (parchment, aged frame tinted by card type, dark ink),
+// Look: KUDA Games' card style (parchment in a wooden frame, dark ink, the card type as a gem in the frame),
 // with the pixel art set into a dark "screen".
 // Run: npm run cards [-- <id> ...]
 import fs from 'node:fs'
@@ -20,7 +20,11 @@ const SERIF = 'Georgia, serif'
 const AUTHORS = 'BONNIE GAMES · KUDA GAMES'
 const INK = '#3b2616'
 const INK_TONE = { gd: '#b4560a', prog: '#1d5b9b', graf: '#a52a68', audio: '#2e7a2e', neg: '#a3122a', any: '#7a4d00' }
-const RAINBOW = ['#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8']
+// Every card has the same wooden frame; its type shows as a gem set into the top of the frame.
+const RAINBOW = ['#a8453a', '#b9803a', '#b9a23f', '#5f8a46', '#3f6f8f', '#6a5a86', '#9a5070']
+const SILVER = ['#8f9095', '#d8d4cc', '#76707e', '#d8d4cc', '#8f9095']
+const SHEET_GEM = { color: '#3f6f8f' }
+const gradient = (id, stops) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">${stops.map((c, i, a) => `<stop offset="${i / (a.length - 1)}" stop-color="${c}"/>`).join('')}</linearGradient>`
 
 /** Runs an art module and returns its pixels as SVG rects, plus the grid size. */
 async function loadArt(id) {
@@ -62,14 +66,15 @@ function wrap(text, widthMm, sizeMm, k = 0.55) {
 }
 const tspans = (lines, x, lh) => lines.map((l, i) => `<tspan x="${x}" dy="${i ? lh : 0}">${esc(l)}</tspan>`).join('')
 
+function gemFill(frame) {
+  if (frame.rainbow) return gradient('gem', RAINBOW)
+  if (frame.foil) return gradient('gem', SILVER)
+  return `<linearGradient id="gem"><stop offset="0" stop-color="${frame.color}"/></linearGradient>`
+}
+
 function defs(frame) {
-  const tint = frame.rainbow
-    ? `<linearGradient id="tint" x1="0" y1="0" x2="1" y2="1">${RAINBOW.map((c, i, a) => `<stop offset="${i / (a.length - 1)}" stop-color="${c}"/>`).join('')}</linearGradient>`
-    : frame.foil
-      ? `<linearGradient id="tint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9a9ca3"/><stop offset=".35" stop-color="#f4efe6"/><stop offset=".5" stop-color="#83769c"/><stop offset=".65" stop-color="#f4efe6"/><stop offset="1" stop-color="#9a9ca3"/></linearGradient>`
-      : `<linearGradient id="tint"><stop offset="0" stop-color="${frame.color}"/></linearGradient>`
   return `<defs>
-    ${tint}
+    ${gemFill(frame)}
     <filter id="paper" x="0" y="0" width="100%" height="100%">
       <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="fine"/>
       <feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="3" seed="8" result="blot"/>
@@ -92,14 +97,19 @@ const corner = (x, y, sx, sy) => `<path d="M${x} ${y + sy * 4} V${y} H${x + sx *
 
 function frameAndParchment(frame) {
   return `${defs(frame)}
-  <rect width="69" height="94" fill="url(#tint)" filter="url(#wood)"/>
+  <rect width="69" height="94" fill="#7a4a26" filter="url(#wood)"/>
   <rect width="69" height="94" fill="#2a1408" opacity=".25"/>
   <rect x="4.6" y="4.6" width="59.8" height="84.8" rx="2.6" fill="none" stroke="#2a1408" stroke-width="0.9" opacity=".7"/>
   <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="#ead6ac" filter="url(#paper)"/>
   <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="url(#vig)"/>
   <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="none" stroke="${INK}" stroke-width="0.5" opacity=".8"/>
-  ${corner(7, 7, 1, 1)}${corner(62, 7, -1, 1)}${corner(7, 87, 1, -1)}${corner(62, 87, -1, -1)}`
+  ${corner(7, 7, 1, 1)}${corner(62, 7, -1, 1)}${corner(7, 87, 1, -1)}${corner(62, 87, -1, -1)}
+  ${gem}`
 }
+
+/** The card type: a gem set into the top of the frame. */
+const gem = `<circle cx="34.5" cy="4.6" r="3.3" fill="#2a1408"/><circle cx="34.5" cy="4.6" r="2.6" fill="url(#gem)"/>
+  <circle cx="34.5" cy="4.6" r="2.6" fill="none" stroke="#c9962b" stroke-width=".5"/><ellipse cx="33.6" cy="3.7" rx="1" ry=".6" fill="#fff" opacity=".55"/>`
 
 function title(text) {
   const up = text.toUpperCase()
@@ -176,7 +186,7 @@ function printSheet(sheet, art) {
     return `<text x="11" y="${y}" font-family="${SANS}" font-weight="700" font-size="3.3" fill="${INK_TONE[id]}">${esc(STAT_LABEL[id].toUpperCase())}</text>
   <text x="58" y="${y + 0.4}" text-anchor="end" font-family="${SANS}" font-weight="900" font-size="5" fill="${INK}">${sheet.target[id]}</text>`
   }).join('\n  ')
-  return svg(`${frameAndParchment({ color: PAL[12] })}
+  return svg(`${frameAndParchment(SHEET_GEM)}
   ${title(sheet.title)}
   ${rule(17.5)}
   <text x="34.5" y="21.3" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-size="2.8" fill="${INK}">Scheda videogioco · ${esc(sheet.difficulty)}</text>
