@@ -46,7 +46,7 @@ Le quattro Mentor hanno già la loro frase (scelte il 7 novembre).
 | Patch su patch | Il bug è stato corretto. Ne sono nati tre. |
 | Solo un ritocco | «Solo un ritocco», disse alle tre del mattino. |
 | Blackout | Ultimo salvataggio: ieri. |
-| Cambio idea | E se invece fosse un gioco di cucina? |
+| Cambio idea | Ma se facessi un gioco di cucina? *(tua)* |
 | Build corrotta | Funzionava cinque minuti fa. Giuro. |
 | Memoria insufficiente | Il browser ha 47 schede aperte. |
 | Merge conflict | Hai cambiato la riga 12. Anche tu. Anche tu. |
