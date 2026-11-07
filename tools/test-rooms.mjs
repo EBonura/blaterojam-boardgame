@@ -1,8 +1,9 @@
 // End-to-end room test over the real public signaling relays.
 // Each "device" is a separate browser context (own localStorage), like separate phones.
-// Run: npm run test:rooms   (CHROME=/path/to/chrome-or-headless-shell to override, Q='?net=mqtt' for MQTT)
+// Run: npm run test:rooms   (CHROME=/path/to/chrome-or-headless-shell to override, RELAY=1 for relay-only)
 import { createServer } from 'vite'
 import puppeteer from 'puppeteer-core'
+import { prepare } from './browser-env.mjs'
 import os from 'node:os'
 
 const CHROME =
@@ -11,7 +12,7 @@ const CHROME =
 // BASE_URL tests an already-served build (see tools/test-zip.mjs); otherwise run the dev server.
 const server = process.env.BASE_URL ? null : await createServer({ server: { port: 5199, strictPort: true }, logLevel: 'error' })
 await server?.listen()
-const URL = (process.env.BASE_URL ?? 'http://localhost:5199/') + (process.env.Q ?? '')
+const URL = (process.env.BASE_URL ?? 'http://localhost:5199/')
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--mute-audio'] })
 const t0 = Date.now()
@@ -25,6 +26,7 @@ const check = (ok, msg) => {
 async function device(name) {
   const ctx = await browser.createBrowserContext()
   const page = await ctx.newPage()
+  await prepare(page)
   page.on('pageerror', (e) => log(`${name} pageerror`, e.message))
   page.on('console', (m) => m.type() === 'error' && log(name, 'console error', m.text().slice(0, 160)))
   page.on('response', (r) => r.status() >= 400 && log(name, 'HTTP', r.status(), r.url()))
@@ -106,6 +108,7 @@ try {
 
   // Anna comes back on the same phone and types the same code.
   A.page = await A.ctx.newPage()
+  await prepare(A.page)
   await A.page.goto(URL)
   await join(A, code)
   let s = await waitFor(A, (s) => s.version >= versionWhileAway && s.online === 4, 'Anna back in the room')

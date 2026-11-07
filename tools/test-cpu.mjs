@@ -3,9 +3,10 @@
 // 2. Two phones and two CPUs: the host's phone goes away mid-game and the other
 //    phone takes over the CPU turns, again to the end of the game.
 // Every CPU turn must be played exactly once, and the table must never stall.
-// Run: npm run test:cpu   (CHROME=/path/to/chrome-or-headless-shell to override, Q='&net=mqtt' for MQTT)
+// Run: npm run test:cpu   (CHROME=/path/to/chrome-or-headless-shell to override, RELAY=1 for relay-only)
 import { createServer } from 'vite'
 import puppeteer from 'puppeteer-core'
+import { prepare } from './browser-env.mjs'
 import os from 'node:os'
 
 const CHROME =
@@ -13,8 +14,8 @@ const CHROME =
 
 const server = process.env.BASE_URL ? null : await createServer({ server: { port: 5198, strictPort: true }, logLevel: 'error' })
 await server?.listen()
-// CPUs wait 80 ms instead of 1.5 s, so a whole game fits in a test run.
-const URL = (process.env.BASE_URL ?? 'http://localhost:5198/') + '?cpuDelay=80' + (process.env.Q ?? '')
+// CPUs wait 80 ms instead of 1.5 s (tools/browser-env.mjs), so a whole game fits in a test run.
+const URL = (process.env.BASE_URL ?? 'http://localhost:5198/')
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--mute-audio'] })
 const t0 = Date.now()
@@ -28,6 +29,7 @@ const check = (ok, msg) => {
 async function device(name) {
   const ctx = await browser.createBrowserContext()
   const page = await ctx.newPage()
+  await prepare(page, { fastCpu: true })
   page.on('pageerror', (e) => log(`${name} pageerror`, e.message))
   page.on('console', (m) => ['error', 'warn'].includes(m.type()) && log(name, 'console', m.type(), m.text().slice(0, 160)))
   await page.goto(URL)

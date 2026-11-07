@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks'
 import { t } from '../text'
 import { load, save } from '../storage'
-import { roomState, status, connected, hostPresence, myId, amHost, createRoom, enterRoom, leaveRoom, dispatch, net, netInfo, hasTurn } from '../net/session'
+import { roomState, status, connected, hostPresence, myId, amHost, createRoom, enterRoom, leaveRoom, dispatch, netInfo, hasTurn } from '../net/session'
 import { hostOf, present } from '../room/state'
 import { MIN_PLAYERS, MAX_PLAYERS } from '../game/rules'
 import { GameScreen } from './GameScreen'
@@ -23,7 +23,7 @@ export function App() {
 
 function Home() {
   const [name, setName] = useState(load<string>('name') ?? '')
-  const [code, setCode] = useState(new URLSearchParams(location.search).get('room') ?? load<string>('lastRoom') ?? '')
+  const [code, setCode] = useState(load<string>('lastRoom') ?? '')
   const ok = name.trim().length > 0
   const remember = () => save('name', name.trim())
 
@@ -84,7 +84,7 @@ function ConnectionHelp() {
     <div class="netstatus">
       <p class="ns-hint">{hint}</p>
       <div class="ns-diag">
-        Server {i.relays}/{i.relaysTotal} · dispositivi {i.peers}{hasTurn ? ' · TURN' : ''}{net.value === 'mqtt' ? ' · MQTT' : ''}
+        Server {i.relays}/{i.relaysTotal} · dispositivi {i.peers}{hasTurn ? ' · TURN' : ''}
       </div>
       {i.error && <code class="ns-err">{i.error}</code>}
     </div>

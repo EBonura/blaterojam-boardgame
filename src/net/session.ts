@@ -9,22 +9,15 @@
 // - Your player id is saved per room code, so typing the same code again puts
 //   you back in your seat. On a different device you can take over the seat of
 //   a player who isn't connected.
-import { joinRoom as joinNostr, getRelaySockets as nostrSockets, type Room } from 'trystero'
+import { joinRoom, getRelaySockets, type Room } from 'trystero'
 import { signal, computed } from '@preact/signals'
 import { reduce, hostOf, newRoom, type Action, type RoomState } from '../room/state'
 import { load, save, deviceId } from '../storage'
 
 const APP_ID = 'blaterojam-boardgame-taranto-2026-v1'
 
-// How phones find each other: public Nostr relays, or public MQTT brokers with
-// ?net=mqtt for debugging (every device in a room must use the same).
-// The MQTT client is large, so it is only downloaded when chosen.
-export type Net = 'nostr' | 'mqtt'
-const urlNet = new URLSearchParams(location.search).get('net')
-// Nostr unless ?net=mqtt is in the URL (a debugging switch; players never choose). A choice saved by older builds is ignored.
-export const net = signal<Net>(urlNet === 'mqtt' ? 'mqtt' : 'nostr')
-let mqtt: typeof import('@trystero-p2p/mqtt') | null = null
-// Nostr relays measured as reliable for Palermo Drive (palermo-drive/src/p2p/relays.js),
+// Phones find each other through Nostr relays: these five were measured as reliable
+// for Palermo Drive (palermo-drive/src/p2p/relays.js), measured as reliable for Palermo Drive (palermo-drive/src/p2p/relays.js),
 // instead of Trystero picking from 29 volunteer relays, some of which rate-limit or go quiet.
 const NOSTR_RELAYS = ['nos.lol', 'nostr.chaima.info', 'nostr.christiansass.de', 'nostr.stakey.net', 'relay.bitmacro.cloud'].map((h) => 'wss://' + h)
 
@@ -37,7 +30,6 @@ const TURN = env.VITE_TURN_URLS && env.VITE_TURN_USER && env.VITE_TURN_PASS
   ? [{ urls: String(env.VITE_TURN_URLS).split(','), username: env.VITE_TURN_USER, credential: env.VITE_TURN_PASS }]
   : undefined
 export const hasTurn = !!TURN
-const FORCE_RELAY = new URLSearchParams(location.search).get('relay') === '1'
 
 /** What the connection is doing, shown on screen so a stuck join can be diagnosed. */
 export const netInfo = signal({ relays: 0, relaysTotal: 0, peers: 0, error: '' })
@@ -103,13 +95,12 @@ let sendPresence: () => void = () => {}
 /** Actions sent but not yet seen in the host's state; resent on every heartbeat. */
 const pending = new Map<string, { env: Envelope; tries: number }>()
 
-/** Player id for this device in this room. `?as=x` in the URL fakes a second device for local testing. */
+/** Player id for this device in this room. */
 function playerIdFor(roomCode: string): string {
-  const as = new URLSearchParams(location.search).get('as')
-  const key = `player:${roomCode}${as ? ':' + as : ''}`
+  const key = `player:${roomCode}`
   let id = load<string>(key)
   if (!id) {
-    id = as ? `${deviceId()}-${as}` : deviceId()
+    id = deviceId()
     save(key, id)
   }
   return id
@@ -182,30 +173,25 @@ function connect(c: string, name: string) {
   // links, which are shared with a new join of the same room. Joining before it
   // has finished gets the new connection killed, so wait for it.
   const seq = ++joinSeq
-  const ready = net.value === 'mqtt' && !mqtt ? import('@trystero-p2p/mqtt').then((m) => void (mqtt = m)) : Promise.resolve()
-  Promise.all([left, ready]).then(() => {
+  left.then(() => {
     if (seq === joinSeq) openRoom(c)
   })
 }
 
 function openRoom(c: string) {
-  const join = net.value === 'mqtt' ? mqtt!.joinRoom : joinNostr
-  const sockets = net.value === 'mqtt' ? mqtt!.getRelaySockets : nostrSockets
   const config = {
     appId: APP_ID,
     password: `blatero-${c}`,
-    ...(net.value === 'nostr' ? { relayConfig: { urls: NOSTR_RELAYS } } : {}),
+    relayConfig: { urls: NOSTR_RELAYS },
     ...(TURN ? { turnConfig: TURN } : {}),
-    // ?relay=1 (testing): only connect through the TURN relay, as on a network that blocks direct links.
-    ...(TURN && FORCE_RELAY ? { rtcConfig: { iceServers: TURN, iceTransportPolicy: 'relay' as const } } : {}),
   }
-  room = join(config, `room-${c}`, {
+  room = joinRoom(config, `room-${c}`, {
     // Peers found each other but WebRTC could not link them: usually a network that needs TURN.
     onJoinError: (d: { error?: unknown }) => (netInfo.value = { ...netInfo.value, error: String(d.error ?? 'errore') }),
   }) as Room
   const diag = () => {
     watchdog()
-    const socks = Object.values((sockets?.() ?? {}) as Record<string, { readyState?: number; connected?: boolean }>)
+    const socks = Object.values((getRelaySockets() ?? {}) as Record<string, { readyState?: number; connected?: boolean }>)
     netInfo.value = {
       ...netInfo.value,
       relays: socks.filter((x) => x.readyState === 1 || x.connected === true).length,

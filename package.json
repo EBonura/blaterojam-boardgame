@@ -22,7 +22,6 @@
   },
   "dependencies": {
     "@preact/signals": "^2.11.4",
-    "@trystero-p2p/mqtt": "0.26.0",
     "preact": "^11.2.0",
     "trystero": "0.26.0"
   }

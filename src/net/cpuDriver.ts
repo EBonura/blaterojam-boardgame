@@ -10,11 +10,10 @@ import { isCpu } from '../room/state'
 import { chooseMove } from '../game/cpu'
 import { currentPlayer, isLegal, type Move } from '../game/rules'
 
-/** Pause before a CPU plays, so the people at the table can follow. `?cpuDelay=ms` changes it (the tests use it). */
-const urlDelay = Number(new URLSearchParams(location.search).get('cpuDelay'))
-const DELAY_MS = Number.isFinite(urlDelay) && urlDelay > 0 ? urlDelay : 1500
+/** Pause before a CPU plays, so the people at the table can follow (tools/test-cpu.mjs shortens 1500 and 3000 ms timers). */
+const DELAY_MS = 1500
 /** An Imprevisto stays on screen longer than a card, so give it time. */
-const AFTER_IMPREVISTO_MS = DELAY_MS
+const AFTER_IMPREVISTO_MS = 1500
 
 let timer: ReturnType<typeof setTimeout> | undefined
 let plannedFor = -1
