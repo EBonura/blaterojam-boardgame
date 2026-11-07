@@ -158,7 +158,7 @@ function Bar({ st, v, from, t, lost, flash, next, boom }: { st: Stat; v: number;
     <div class={`bar t-${st} ${v === t ? 'ok' : ''} ${flash ? 'flash' : ''} ${boom ? 'boom' : ''} ${next !== v && !boom && next === t ? 'will-ok' : ''}`}
       aria-label={`${STAT_NAME[st]} ${v}${next !== v ? `, diventerebbe ${next}` : ''}, obiettivo ${t}`}>
       <span class="bar-name">
-        {STAT_SHORT[st]}
+        {STAT_NAME[st]}
         {lost && <i class="lost" title="Già andata in overflow">X</i>}
       </span>
       <div class="boxes" key={`boxes-${gen}`}>
@@ -334,7 +334,7 @@ function Stage({ g, picked, onPreview, onClose }: { g: GameState; picked: Picked
               <div class="stats">
                 {DISPLAY_ORDER.map((s) => (
                   <button class={`t-${s} ${stat === s ? 'on' : ''}`} onClick={() => setStat(s)}>
-                    {STAT_SHORT[s]} <b>{g.stats[s]}</b>
+                    {STAT_NAME[s]} <b>{g.stats[s]}</b>
                   </button>
                 ))}
               </div>
