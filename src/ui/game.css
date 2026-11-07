@@ -90,6 +90,11 @@
 .turnbar.mine { background: var(--yellow); color: #000; }
 .tb-who { font-size: clamp(14px, calc(var(--u) * 2.3), 19px); }
 .tb-note { font-size: 12px; font-weight: 700; margin-top: 2px; }
+.tb-clock { display: inline-block; min-width: 2.2em; margin-left: .6em; padding: 1px 5px; border-radius: 5px; font-variant-numeric: tabular-nums;
+  color: var(--cream); background: rgba(0, 0, 0, .45); vertical-align: 1px; }
+.turnbar.mine .tb-clock { color: var(--yellow); background: #000; }
+.tb-clock.low { color: #fff; background: var(--red); animation: blink .5s steps(2) infinite; }
+.turnbar.mine .tb-clock.low { color: #fff; background: var(--red); }
 .turnbar .ghost, .turnbar .primary { margin-top: 4px; }
 .thinking i { display: inline-block; width: 4px; height: 4px; margin-left: 3px; border-radius: 50%; background: currentColor; animation: dot 1s infinite; }
 .thinking i:nth-child(2) { animation-delay: .15s; } .thinking i:nth-child(3) { animation-delay: .3s; }
@@ -126,7 +131,7 @@
 .card-fx.rows-2 .fx-num { font-size: 15cqw; } .card-fx.rows-3 .fx-num { font-size: 12cqw; } .card-fx.rows-4 .fx-num { font-size: 10cqw; }
 .card-fx.rows-3 .fx-label, .card-fx.rows-4 .fx-label { font-size: 5.5cqw; }
 .fx-text { font-size: 7cqw; font-weight: 700; line-height: 1.2; color: var(--ink); }
-.card-quote { font-family: var(--font); font-size: 6cqw;  color: var(--ink); line-height: 1.25; margin-top: 1.5cqw; }
+.card-quote { font-family: var(--font); font-size: calc(6cqw * var(--qs, 1));  color: var(--ink); line-height: 1.25; margin-top: 1.5cqw; }
 .card.compact .card-in { inset: 4cqw; padding: 0 3cqw; }
 .card.compact .card-title { font-size: 7cqw; min-height: 2.6em; padding: 2cqw 5cqw 1.5cqw; }
 .card.compact .card-screen { padding: 2.5cqw 0; }
@@ -141,7 +146,7 @@
 .card.compact:has(.rows-3) .card-fx { flex: 1; }
 .card.compact:has(.rows-3) .card-fx::before { display: none; }
 .card.compact .fx-text { font-size: 9cqw; }
-.card.compact .card-quote { font-size: max(7px, 5.6cqw); line-height: 1.2; margin-top: .8cqw; }
+.card.compact .card-quote { font-size: max(5px, calc(5.6cqw * var(--qs, 1))); line-height: 1.2; margin-top: .8cqw; }
 .card.compact .card-screen { min-height: 34%; }
 .card.dim { opacity: .35; }
 .card.sel { transform: translateY(-6px); box-shadow: inset 0 0 0 2px #e6c25a, inset 0 0 0 4px #5a3a08, 0 0 0 3px var(--gold); }

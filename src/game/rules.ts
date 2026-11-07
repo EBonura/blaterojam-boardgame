@@ -18,6 +18,8 @@ export const LOSS_OVERFLOWS = 3
 /** The jam's deadline: the team has this many moves (turns, across all players) to finish the game. 48, like the 48 hours of a jam. */
 export const MOVE_LIMIT = 48
 export const JOLLY_MAX = 15
+/** Seconds a person has for each move; when they run out, a random card from their hand is played for them. CPUs have no clock. */
+export const TURN_SECONDS = 15
 
 type Deltas = Partial<Record<Stat, number>>
 export type Effect =
@@ -62,6 +64,8 @@ export type GameEvent = {
   hits?: { stat: Stat; t: number }[]
   /** On a play: the card was picked face down (Blackout). */
   blind?: boolean
+  /** On a play or a pass: made for the player because their time ran out. */
+  timeout?: boolean
   /** On an Imprevisto: the board after the card, before the Imprevisto changed it. */
   before?: Record<Stat, number>
 }
@@ -94,11 +98,12 @@ export type GameState = {
 }
 
 export type Move =
-  | { type: 'play'; card: string; stat?: Stat; value?: number }
+  /** `timeout`: played for the player because their time ran out. */
+  | { type: 'play'; card: string; stat?: Stat; value?: number; timeout?: boolean }
   /** Pass the turn of a player who isn't connected, so the table isn't stuck. */
   | { type: 'skipAbsent' }
   /** Only allowed when no card in hand can be played. */
-  | { type: 'pass' }
+  | { type: 'pass'; timeout?: boolean }
 
 // ---------- randomness (seeded, so a state fully determines what happens next)
 
@@ -179,7 +184,7 @@ export function applyMove(prev: GameState, m: Move, by: string, connected: Set<s
 
   if (m.type === 'pass') {
     if (by !== me || g.blind || hasLegal(g)) return null
-    log(g, 'pass')
+    log(g, 'pass', m.timeout ? { timeout: true } : {})
     endTurn(g)
     return g
   }
@@ -195,7 +200,7 @@ export function applyMove(prev: GameState, m: Move, by: string, connected: Set<s
     // Blackout: the card was picked face down. An illegal card does nothing.
     g.blind = false
     if (!isLegal(g, m.card)) {
-      log(g, 'illegal', { card: m.card, blind: true })
+      log(g, 'illegal', { card: m.card, blind: true, ...(m.timeout ? { timeout: true } : {}) })
       return afterPlay(g)
     }
     // Choices on a blind card are random too.
@@ -210,7 +215,7 @@ export function applyMove(prev: GameState, m: Move, by: string, connected: Set<s
   if (e.type === 'set' && (!STATS.includes(stat!) || !Number.isInteger(value) || value! < e.min || value! > e.max)) return null
 
   g.undo = { stats: { ...g.stats }, overflowed: [...g.overflowed] }
-  log(g, 'play', { card: m.card, stat, value, ...(blind ? { blind } : {}) })
+  log(g, 'play', { card: m.card, stat, value, ...(blind ? { blind } : {}), ...(m.timeout ? { timeout: true } : {}) })
 
   const hits: { stat: Stat; t: number }[] = []
   if (e.type === 'add') for (const s of STATS) change(g, s, e.deltas[s] ?? 0, hits)
@@ -224,6 +229,17 @@ export function applyMove(prev: GameState, m: Move, by: string, connected: Set<s
     if (checkEnd(g)) return g
   }
   return afterPlay(g)
+}
+
+/** The move made for a player whose time ran out: a random card from the hand (one that can be played), with random choices; a pass when none can. */
+export function timeoutMove(g: GameState, rnd: () => number = Math.random): Move {
+  const pick = <T>(xs: T[]) => xs[Math.floor(rnd() * xs.length)]
+  const cards = g.blind ? g.hand : g.hand.filter((c) => isLegal(g, c))
+  if (!cards.length) return { type: 'pass', timeout: true }
+  const card = pick(cards)
+  const e = playCard(card).effect
+  if (g.blind || (e.type !== 'choice' && e.type !== 'set')) return { type: 'play', card, timeout: true }
+  return { type: 'play', card, stat: pick([...STATS]), ...(e.type === 'set' ? { value: e.min + Math.floor(rnd() * (e.max - e.min + 1)) } : {}), timeout: true }
 }
 
 /** What a card would do to the board, before playing it (the card's own effect only, no Imprevisto). */

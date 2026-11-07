@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { SHEET_BY_ID, newGame, applyMove, currentPlayer, inBuffer, type GameState, type Move } from './rules'
+import { SHEET_BY_ID, newGame, applyMove, currentPlayer, inBuffer, timeoutMove, isLegal, BUFFER_MIN, playCard, type GameState, type Move } from './rules'
 
 // These tests check the rules, not the balance: pin Gestionale's targets so retuning the
 // game sheets (src/cards/cards.json) doesn't change what the tests expect.
@@ -295,5 +295,31 @@ describe('move limit', () => {
   it('a win on the last move still counts', () => {
     const g = game({ limit: 1, stats: { gd: 13, prog: 11, graf: 9, audio: 6 }, hand: ['autocompletamento#1'] })
     expect(play(g, { type: 'play', card: 'autocompletamento#1' })!.result).toBe('won')
+  })
+})
+
+describe('time running out', () => {
+  it('plays a random card the rules accept, marked as a timeout, for many games and turns', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      let g = newGame(['a', 'b', 'c', 'd'], seed)
+      for (let i = 0; i < 30 && g.result === 'playing'; i++) {
+        const who = currentPlayer(g)
+        const m = timeoutMove(g)
+        expect(m.type === 'play' || m.type === 'pass').toBe(true)
+        const next = applyMove(g, m, who, new Set(['a', 'b', 'c', 'd']))
+        expect(next).not.toBeNull()
+        expect(next!.events.some((e) => e.timeout)).toBe(true)
+        g = next!
+      }
+    }
+  })
+
+  it('passes when no card in hand can be played', () => {
+    const g = newGame(['a', 'b', 'c', 'd'], 3)
+    g.stats = { gd: BUFFER_MIN, prog: 0, graf: 0, audio: 0 } // in the Buffer: Base cards only
+    g.hand = g.deck.concat(g.hand).filter((c) => playCard(c).level !== 'base').slice(0, 4)
+    expect(g.hand.length).toBe(4)
+    expect(g.hand.some((c) => isLegal(g, c))).toBe(false)
+    expect(timeoutMove(g)).toEqual({ type: 'pass', timeout: true })
   })
 })

@@ -31,6 +31,8 @@ Le statistiche non scendono mai sotto 0.
 
 Il primo giocatore è scelto a caso.
 
+**Tempo:** ogni giocatore ha 15 secondi per mossa. Se il tempo scade, si gioca per lui una carta a caso tra quelle che può giocare (con scelte a caso, se la carta ne chiede); se non ne può giocare nessuna, passa. Il conto parte dopo che il tavolo ha visto l'ultima carta o l'ultimo Imprevisto. Le CPU non hanno tempo.
+
 ## Imprevisti
 
 - Si attivano solo con gli **aumenti** che raggiungono una soglia (7 o 13) da sotto. Le diminuzioni non li attivano.
@@ -58,6 +60,7 @@ Il primo giocatore è scelto a caso.
 - Crash improvviso: la plancia torna com'era prima dell'ultima carta giocata, Overflow compresi.
 - Minimo 0, nessun underflow.
 - Le carte in mano sono visibili solo al giocatore di turno.
+- Tempo per mossa: 15 secondi, poi una carta giocabile a caso (aggiunta nel gioco digitale).
 - Soglie degli Imprevisti: solo 7 e 13 (l'11 è stato tolto).
 - Limite di mosse: la partita è persa quando finiscono le mosse.
 - Imprevisti per statistica: Patch su patch porta Programmazione a 0; Troppi poligoni -10 Grafica; Solo un ritocco -7 Game Design; Audio clipping -5 Audio (prima tutti a 0).

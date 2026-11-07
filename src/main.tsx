@@ -6,9 +6,11 @@ import '@fontsource/silkscreen/700.css'
 import './style.css'
 import { startCpuDriver } from './net/cpuDriver'
 import { startVoteDriver } from './net/voteDriver'
+import { startTurnTimer } from './net/turnTimer'
 
 startCpuDriver()
 startVoteDriver()
+startTurnTimer()
 render(<App />, document.getElementById('app')!)
 startHolo()
 

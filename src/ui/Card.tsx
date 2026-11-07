@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'preact/hooks'
 import { playCard, imprevisto, type PlayCard, type ImprevistoCard } from '../game/rules'
 import { effectRows } from '../cards/effects'
 
@@ -18,6 +19,22 @@ export function Card({ card, kind = 'play', dim, selected, onClick, compact }: P
   const c: PlayCard | ImprevistoCard = p ?? imprevisto(card)
   const frame = p ? p.frame : 'bianco'
   const rows = effectRows(c.effect)
+  const inner = useRef<HTMLDivElement>(null)
+  // A long funny line steps down in size until the card's text fits (checked again once the font has loaded, and on resize).
+  useLayoutEffect(() => {
+    const el = inner.current
+    if (!el || !c.quote) return
+    const fit = () => {
+      let s = 1
+      el.style.setProperty('--qs', '1')
+      while (el.scrollHeight > el.clientHeight + 1 && s > 0.5) el.style.setProperty('--qs', String((s -= 0.05)))
+    }
+    fit()
+    document.fonts?.ready.then(fit)
+    const ro = new ResizeObserver(fit)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [card, compact])
   return (
     <button
       type="button"
@@ -27,7 +44,7 @@ export function Card({ card, kind = 'play', dim, selected, onClick, compact }: P
       aria-pressed={selected}
       aria-label={`${c.title}: ${c.text}`}
     >
-      <div class="card-in">
+      <div class="card-in" ref={inner}>
         <div class={`card-title ${c.title.length > 16 ? 'long' : ''}`}>{c.title}</div>
         <div class="card-screen"><img class="card-art" src={`./cards/art/${c.id}.svg`} alt="" draggable={false} /></div>
         <div class={`card-fx rows-${rows?.length ?? 0}`}>

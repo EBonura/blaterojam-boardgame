@@ -9,6 +9,7 @@ import {
   type GameState, type GameEvent, type Stat, type Move, type Preview,
 } from '../game/rules'
 import { present, isCpu } from '../room/state'
+import { turnClock } from '../net/turnTimer'
 import { Card, CardBack } from './Card'
 import { SheetFacts } from './Vote'
 import './game.css'
@@ -263,7 +264,10 @@ function TurnBar({ g }: { g: GameState }) {
   const noLegal = mine && !g.blind && !g.hand.some((c) => isLegal(g, c))
   return (
     <div class={`turnbar ${mine ? 'mine' : ''}`} key={`${g.turn}-${who}`}>
-      <div class="tb-who px">{mine ? 'Tocca a te!' : `Tocca a ${nameOf(who)}`}</div>
+      <div class="tb-who px">
+        {mine ? 'Tocca a te!' : `Tocca a ${nameOf(who)}`}
+        <Clock />
+      </div>
       {cpu(who) && g.result === 'playing' && (
         <div class="tb-note thinking">
           {t('cpuThinking', { name: nameOf(who) })}
@@ -285,6 +289,20 @@ function TurnBar({ g }: { g: GameState }) {
       )}
     </div>
   )
+}
+
+/** Seconds left on the current person's move: held at the full time while the table watches the last move, red in the last five. */
+function Clock() {
+  const c = turnClock.value
+  const [, tick] = useState(0)
+  useEffect(() => {
+    if (!c) return
+    const i = setInterval(() => tick((n) => n + 1), 250)
+    return () => clearInterval(i)
+  }, [c])
+  if (!c) return null
+  const left = Math.max(0, Math.ceil((c.end - Math.max(Date.now(), c.start)) / 1000))
+  return <span class={`tb-clock ${left <= 5 ? 'low' : ''}`} role="timer" aria-label={`${left} secondi`}>{left}</span>
 }
 
 /** The hand as a fan. Only the player whose turn it is sees the faces. */
@@ -418,6 +436,7 @@ function describe(e: GameEvent): string | null {
   switch (e.kind) {
     case 'play': {
       const c = playCard(e.card!)
+      if (e.timeout) return `Tempo scaduto: ${who} gioca ${c.title}${e.stat ? ` su ${STAT_NAME[e.stat]}` : ''}`
       if (e.blind && e.player === myId.value) return `Hai giocato alla cieca: ${c.title}${e.stat ? ` su ${STAT_NAME[e.stat]}` : ''}`
       if (c.effect.type === 'set') return `${who} gioca ${c.title}: ${STAT_NAME[e.stat!]} a ${e.value}`
       return `${who} gioca ${c.title}${e.stat ? ` su ${STAT_NAME[e.stat]}` : ''}`
@@ -426,7 +445,7 @@ function describe(e: GameEvent): string | null {
     case 'overflow': return `Overflow su ${STAT_NAME[e.stat!]}! Torna a 0`
     case 'imprevisto': return `Imprevisto: ${imprevisto(e.card!).title}`
     case 'redraw': return `${who} non ha carte Base: ripesca`
-    case 'pass': return `${who} passa il turno`
+    case 'pass': return e.timeout ? `Tempo scaduto: ${who} passa` : `${who} passa il turno`
     case 'skip': return `${who} salta il turno`
     case 'won': return 'Gioco completato!'
     case 'lost': return 'Troppi overflow: il gioco è perso'
@@ -488,7 +507,7 @@ function Reveal({ g }: { g: GameState }) {
   const [queue, setQueue] = useState<GameEvent[]>([])
   useEffect(() => {
     const fresh = g.events.filter(
-      (e) => e.seq > seen && (e.kind === 'imprevisto' || e.kind === 'illegal' || (e.kind === 'play' && (e.player !== myId.value || e.blind))),
+      (e) => e.seq > seen && (e.kind === 'imprevisto' || e.kind === 'illegal' || (e.kind === 'play' && (e.player !== myId.value || e.blind || e.timeout))),
     )
     if (fresh.length) setQueue((q) => [...q, ...fresh])
     const last = g.events.at(-1)?.seq
