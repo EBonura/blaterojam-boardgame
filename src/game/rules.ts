@@ -409,5 +409,6 @@ function startTurn(g: GameState) {
 function log(g: GameState, kind: GameEvent['kind'], extra: Partial<GameEvent> = {}) {
   const seq = (g.events.at(-1)?.seq ?? 0) + 1
   g.events.push({ seq, turn: g.turn, player: currentPlayer(g), kind, ...extra })
-  if (g.events.length > 40) g.events.splice(0, g.events.length - 40)
+  // A few turns of history is all the screens use; the log travels with every full room state.
+  if (g.events.length > 24) g.events.splice(0, g.events.length - 24)
 }
