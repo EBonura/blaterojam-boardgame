@@ -141,6 +141,8 @@
 .card.compact:has(.rows-3) .card-fx { flex: 1; }
 .card.compact:has(.rows-3) .card-fx::before { display: none; }
 .card.compact .fx-text { font-size: 9cqw; }
+.card.compact .card-quote { font-size: max(7px, 5.6cqw); line-height: 1.2; margin-top: .8cqw; }
+.card.compact .card-screen { min-height: 34%; }
 .card.dim { opacity: .35; }
 .card.sel { transform: translateY(-6px); box-shadow: inset 0 0 0 2px #e6c25a, inset 0 0 0 4px #5a3a08, 0 0 0 3px var(--gold); }
 /* Frame: lacquer in the card type's colour with a gold edge; Mentors are holographic. */
