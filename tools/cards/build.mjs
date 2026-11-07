@@ -20,7 +20,7 @@ const SERIF = 'Georgia, serif'
 const AUTHORS = 'BONNIE GAMES · KUDA GAMES'
 const INK = '#3b2616'
 const INK_TONE = { gd: '#b4560a', prog: '#1d5b9b', graf: '#a52a68', audio: '#2e7a2e', neg: '#a3122a', any: '#7a4d00' }
-// Every card has the same wooden frame; its type shows as a gem set into the top of the frame.
+// Every card has the same wooden frame; its type shows as a gem set into the frame's top-left corner.
 const RAINBOW = ['#a8453a', '#b9803a', '#b9a23f', '#5f8a46', '#3f6f8f', '#6a5a86', '#9a5070']
 const SILVER = ['#8f9095', '#d8d4cc', '#76707e', '#d8d4cc', '#8f9095']
 const SHEET_GEM = { color: '#3f6f8f' }
@@ -103,13 +103,13 @@ function frameAndParchment(frame) {
   <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="#ead6ac" filter="url(#paper)"/>
   <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="url(#vig)"/>
   <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="none" stroke="${INK}" stroke-width="0.5" opacity=".8"/>
-  ${corner(7, 7, 1, 1)}${corner(62, 7, -1, 1)}${corner(7, 87, 1, -1)}${corner(62, 87, -1, -1)}
+  ${corner(62, 7, -1, 1)}${corner(7, 87, 1, -1)}${corner(62, 87, -1, -1)}
   ${gem}`
 }
 
-/** The card type: a gem set into the top of the frame. */
-const gem = `<circle cx="34.5" cy="4.6" r="3.3" fill="#2a1408"/><circle cx="34.5" cy="4.6" r="2.6" fill="url(#gem)"/>
-  <circle cx="34.5" cy="4.6" r="2.6" fill="none" stroke="#c9962b" stroke-width=".5"/><ellipse cx="33.6" cy="3.7" rx="1" ry=".6" fill="#fff" opacity=".55"/>`
+/** The card type: a gem set into the top-left corner of the frame, in place of that corner's ornament. */
+const gem = `<circle cx="7.6" cy="7.6" r="3" fill="#2a1408"/><circle cx="7.6" cy="7.6" r="2.4" fill="url(#gem)"/>
+  <circle cx="7.6" cy="7.6" r="2.4" fill="none" stroke="#c9962b" stroke-width=".5"/><ellipse cx="6.8" cy="6.8" rx=".9" ry=".55" fill="#fff" opacity=".55"/>`
 
 function title(text) {
   const up = text.toUpperCase()

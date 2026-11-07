@@ -305,6 +305,7 @@ function Stage({ g, picked, onClose }: { g: GameState; picked: Picked; onClose: 
 
   return (
     <div class={`stage ${leaving ? 'leaving' : ''}`} onClick={(e) => e.target === e.currentTarget && !leaving && onClose()}>
+      <div class="stage-row">
       <div class="stage-card" ref={cardRef}>
         <Card card={picked.card} />
       </div>
@@ -315,7 +316,7 @@ function Stage({ g, picked, onClose }: { g: GameState; picked: Picked; onClose: 
             <div class="stats">
               {DISPLAY_ORDER.map((s) => (
                 <button class={`t-${s} ${stat === s ? 'on' : ''}`} onClick={() => setStat(s)}>
-                  {STAT_NAME[s]} <b>{g.stats[s]}</b>
+                  {STAT_SHORT[s]} <b>{g.stats[s]}</b>
                 </button>
               ))}
             </div>
@@ -334,6 +335,7 @@ function Stage({ g, picked, onClose }: { g: GameState; picked: Picked; onClose: 
           </button>
           <button class="ghost" onClick={onClose} disabled={leaving}>Annulla</button>
         </div>
+      </div>
       </div>
     </div>
   )
