@@ -4,8 +4,8 @@ import { t } from '../text'
 import { DISPLAY_ORDER, STAT_SHORT } from '../cards/effects'
 import {
   STAT_NAME, THRESHOLDS, BUFFER_MIN, OVERFLOW, LOSS_OVERFLOWS, JOLLY_MAX,
-  currentPlayer, sheetOf, inBuffer, isLegal, needsStat, playCard, imprevisto,
-  type GameState, type GameEvent, type Stat, type Move,
+  currentPlayer, sheetOf, inBuffer, isLegal, needsStat, playCard, imprevisto, previewPlay,
+  type GameState, type GameEvent, type Stat, type Move, type Preview,
 } from '../game/rules'
 import { present, isCpu } from '../room/state'
 import { Card, CardBack } from './Card'
@@ -24,19 +24,21 @@ type Picked = { card: string; from: DOMRect }
 export function GameScreen() {
   const g = roomState.value!.game!
   const [picked, setPicked] = useState<Picked | null>(null)
+  const [preview, setPreview] = useState<Preview | null>(null)
   // A new hand (or a new turn) drops any card that was being looked at.
   const handKey = g.hand.join(',') + g.turn
-  useEffect(() => setPicked(null), [handKey])
+  useEffect(() => (setPicked(null), setPreview(null)), [handKey])
+  const close = () => (setPicked(null), setPreview(null))
 
   return (
     <section class="gs">
       <Players g={g} />
       <Tape g={g} />
-      <Crt g={g} />
+      <Crt g={g} preview={preview} />
       <EventLog g={g} />
       <TurnBar g={g} />
       <Hand g={g} picked={picked?.card ?? null} onPick={setPicked} />
-      {picked && <Stage key={picked.card} g={g} picked={picked} onClose={() => setPicked(null)} />}
+      {picked && <Stage key={picked.card} g={g} picked={picked} onPreview={setPreview} onClose={close} />}
       <Reveal g={g} />
       {g.result !== 'playing' && <EndScreen g={g} />}
     </section>
@@ -113,7 +115,7 @@ function usePrevious<T>(v: T): T {
 }
 
 /** The board: a CRT with one bar of 20 boxes per stat that light up as the stat grows. */
-function Crt({ g }: { g: GameState }) {
+function Crt({ g, preview }: { g: GameState; preview: Preview | null }) {
   const target = sheetOf(g).target
   const prev = usePrevious(g.stats)
   const lastSeq = g.events.at(-1)?.seq ?? 0
@@ -121,10 +123,11 @@ function Crt({ g }: { g: GameState }) {
   // Rows that overflowed in the latest events flash red.
   const flashed = new Set(g.events.filter((e) => e.seq > prevSeq && e.kind === 'overflow').map((e) => e.stat))
   return (
-    <div class={`crt ${inBuffer(g) ? 'buffer' : ''}`}>
+    <div class={`crt ${inBuffer(g) ? 'buffer' : ''} ${preview ? 'previewing' : ''}`}>
       <div class="glass">
         {DISPLAY_ORDER.map((st) => (
-          <Bar key={st} st={st} v={g.stats[st]} from={prev[st]} t={target[st]} lost={g.overflowed.includes(st)} flash={flashed.has(st)} />
+          <Bar key={st} st={st} v={g.stats[st]} from={prev[st]} t={target[st]} lost={g.overflowed.includes(st)} flash={flashed.has(st)}
+            next={preview ? preview.stats[st] : g.stats[st]} boom={!!preview?.overflow.includes(st)} />
         ))}
         <div class="scale px" aria-hidden="true">
           {[0, 7, 11, 13, 15, 20].map((n) => (
@@ -143,7 +146,8 @@ function Crt({ g }: { g: GameState }) {
   )
 }
 
-function Bar({ st, v, from, t, lost, flash }: { st: Stat; v: number; from: number; t: number; lost: boolean; flash: boolean }) {
+/** One stat. `next`/`boom` preview the card on centre stage: ghost boxes it would fill, boxes it would empty, an overflow. */
+function Bar({ st, v, from, t, lost, flash, next, boom }: { st: Stat; v: number; from: number; t: number; lost: boolean; flash: boolean; next: number; boom: boolean }) {
   // Remount the boxes when the value changes, so the fill and drain animations replay.
   const [gen, setGen] = useState(0)
   const [last, setLast] = useState({ from: v, to: v })
@@ -151,7 +155,8 @@ function Bar({ st, v, from, t, lost, flash }: { st: Stat; v: number; from: numbe
     if (from !== v) (setLast({ from, to: v }), setGen((n) => n + 1))
   }, [v])
   return (
-    <div class={`bar t-${st} ${v === t ? 'ok' : ''} ${flash ? 'flash' : ''}`} aria-label={`${STAT_NAME[st]} ${v}, obiettivo ${t}`}>
+    <div class={`bar t-${st} ${v === t ? 'ok' : ''} ${flash ? 'flash' : ''} ${boom ? 'boom' : ''} ${next !== v && !boom && next === t ? 'will-ok' : ''}`}
+      aria-label={`${STAT_NAME[st]} ${v}${next !== v ? `, diventerebbe ${next}` : ''}, obiettivo ${t}`}>
       <span class="bar-name">
         {STAT_SHORT[st]}
         {lost && <i class="lost" title="Già andata in overflow">✕</i>}
@@ -175,13 +180,23 @@ function Bar({ st, v, from, t, lost, flash }: { st: Stat; v: number; from: numbe
                 k === v && 'cur',
                 filling && 'fill',
                 draining && 'drain',
+                !boom && next > v && k > v && k <= next && 'ghost',
+                ((!boom && next < v && k > next && k <= v) || (boom && on)) && 'lose',
+                boom && k === OVERFLOW && 'blast',
               ].filter(Boolean).join(' ')}
               style={step ? { animationDelay: `${step * 45}ms` } : undefined}
             />
           )
         })}
       </div>
-      <b class="bar-v" key={`v-${v}`}>{v}</b>
+      {next !== v || boom ? (
+        <b class="bar-v pv">
+          <s>{v}</s>
+          {boom ? '!' : next}
+        </b>
+      ) : (
+        <b class="bar-v" key={`v-${v}`}>{v}</b>
+      )}
     </div>
   )
 }
@@ -265,13 +280,15 @@ function Hand({ g, picked, onPick }: { g: GameState; picked: string | null; onPi
 }
 
 /** The picked card in the middle of the screen: choose the stat if needed, then Gioca sends it into the CRT. */
-function Stage({ g, picked, onClose }: { g: GameState; picked: Picked; onClose: () => void }) {
+function Stage({ g, picked, onPreview, onClose }: { g: GameState; picked: Picked; onPreview: (p: Preview | null) => void; onClose: () => void }) {
   const card = playCard(picked.card)
   const [stat, setStat] = useState<Stat | null>(null)
   const [value, setValue] = useState(10)
   const [leaving, setLeaving] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const ready = !needsStat(picked.card) || !!stat
+  const p = previewPlay(g, picked.card, stat ?? undefined, card.effect.type === 'set' ? value : undefined)
+  useEffect(() => onPreview(p), [stat, value])
 
   // Fly in from where the card sat in the fan.
   useLayoutEffect(() => {
@@ -288,6 +305,7 @@ function Stage({ g, picked, onClose }: { g: GameState; picked: Picked; onClose: 
   }, [])
 
   const play = () => {
+    onPreview(null)
     const move: Move = { type: 'play', card: picked.card, stat: stat ?? undefined, value: card.effect.type === 'set' ? value : undefined }
     const el = cardRef.current
     const crt = document.querySelector('.crt')?.getBoundingClientRect()
@@ -305,37 +323,46 @@ function Stage({ g, picked, onClose }: { g: GameState; picked: Picked; onClose: 
 
   return (
     <div class={`stage ${leaving ? 'leaving' : ''}`} onClick={(e) => e.target === e.currentTarget && !leaving && onClose()}>
-      <div class="stage-row">
-      <div class="stage-card" ref={cardRef}>
-        <Card card={picked.card} />
-      </div>
-      <div class="choose">
-        {needsStat(picked.card) && (
-          <>
-            <div class="hint">{card.effect.type === 'set' ? 'Quale statistica vuoi impostare?' : 'Su quale statistica?'}</div>
-            <div class="stats">
-              {DISPLAY_ORDER.map((s) => (
-                <button class={`t-${s} ${stat === s ? 'on' : ''}`} onClick={() => setStat(s)}>
-                  {STAT_SHORT[s]} <b>{g.stats[s]}</b>
-                </button>
-              ))}
+      <div class={`stage-row ${needsStat(picked.card) || (p && (p.wins || p.imprevisto || p.overflow.length > 0)) ? '' : 'solo'}`}>
+        <div class="stage-card" ref={cardRef}>
+          <Card card={picked.card} />
+        </div>
+        <div class="choose">
+          {needsStat(picked.card) && (
+            <>
+              <div class="hint">{card.effect.type === 'set' ? 'Quale statistica vuoi impostare?' : 'Su quale statistica?'}</div>
+              <div class="stats">
+                {DISPLAY_ORDER.map((s) => (
+                  <button class={`t-${s} ${stat === s ? 'on' : ''}`} onClick={() => setStat(s)}>
+                    {STAT_SHORT[s]} <b>{g.stats[s]}</b>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {card.effect.type === 'set' && stat && (
+            <div class="stepper">
+              <button onClick={() => setValue(Math.max(0, value - 1))} aria-label="Meno">−</button>
+              <b class="px">{value}</b>
+              <button onClick={() => setValue(Math.min(JOLLY_MAX, value + 1))} aria-label="Più">+</button>
             </div>
-          </>
-        )}
-        {card.effect.type === 'set' && stat && (
-          <div class="stepper">
-            <button onClick={() => setValue(Math.max(0, value - 1))} aria-label="Meno">−</button>
-            <b class="px">{value}</b>
-            <button onClick={() => setValue(Math.min(JOLLY_MAX, value + 1))} aria-label="Più">+</button>
-          </div>
-        )}
-        <div class="choose-actions">
-          <button class="primary px" disabled={!ready || leaving} onClick={play}>
-            Gioca
-          </button>
-          <button class="ghost" onClick={onClose} disabled={leaving}>Annulla</button>
+          )}
+          {p && (p.wins || p.imprevisto || p.overflow.length > 0) && (
+            <div class={`verdict ${p.wins ? 'win' : 'warn'}`}>
+              {p.wins
+                ? 'Con questa carta completate il gioco!'
+                : p.overflow.length
+                  ? `Overflow su ${p.overflow.map((x) => STAT_NAME[x]).join(' e ')}: torna a 0`
+                  : 'Supera una soglia: scatta un Imprevisto'}
+            </div>
+          )}
         </div>
       </div>
+      <div class="choose-actions">
+        <button class="primary px" disabled={!ready || leaving} onClick={play}>
+          Gioca
+        </button>
+        <button class="ghost" onClick={onClose} disabled={leaving}>Annulla</button>
       </div>
     </div>
   )

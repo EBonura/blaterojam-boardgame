@@ -213,6 +213,22 @@ export function applyMove(prev: GameState, m: Move, by: string, connected: Set<s
   return afterPlay(g)
 }
 
+/** What a card would do to the board, before playing it (the card's own effect only, no Imprevisto). */
+export type Preview = { stats: Record<Stat, number>; overflow: Stat[]; imprevisto: boolean; wins: boolean }
+
+/** Null when the card still needs a stat (or a value) to be chosen. */
+export function previewPlay(g: GameState, instance: string, stat?: Stat, value?: number): Preview | null {
+  const e = playCard(instance).effect
+  if ((e.type === 'choice' || e.type === 'set') && !stat) return null
+  const sim: GameState = { ...g, stats: { ...g.stats }, overflowed: [...g.overflowed], events: [] }
+  let crossed = false
+  if (e.type === 'add') for (const s of STATS) crossed = change(sim, s, e.deltas[s] ?? 0, true) || crossed
+  if (e.type === 'choice') crossed = change(sim, stat!, e.amount, true)
+  if (e.type === 'set') sim.stats[stat!] = value ?? 0
+  const overflow = sim.events.filter((x) => x.kind === 'overflow').map((x) => x.stat!)
+  return { stats: sim.stats, overflow, imprevisto: crossed && !g.imprevistoThisTurn, wins: isWin(sim) }
+}
+
 // ---------- internals
 
 /**

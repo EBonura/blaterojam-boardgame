@@ -211,3 +211,20 @@ describe('absent players', () => {
     expect(currentPlayer(n)).toBe('b')
   })
 })
+
+describe('preview', () => {
+  it('shows what a card would do without changing the game', async () => {
+    const { previewPlay } = await import('./rules')
+    const g = game({ stats: { gd: 0, prog: 5, graf: 18, audio: 0 } })
+    expect(previewPlay(g, 'caffe#1')).toBeNull() // needs a stat first
+    expect(previewPlay(g, 'programmatore#1')).toMatchObject({ stats: { prog: 8 }, imprevisto: true, overflow: [] })
+    expect(previewPlay(g, 'grafico#1')).toMatchObject({ stats: { graf: 0 }, overflow: ['graf'] })
+    expect(previewPlay(g, 'blatero#1', 'audio', 6)).toMatchObject({ stats: { audio: 6 }, imprevisto: false })
+    expect(g.stats).toEqual({ gd: 0, prog: 5, graf: 18, audio: 0 })
+  })
+  it('says when the card would complete the game', async () => {
+    const { previewPlay } = await import('./rules')
+    const g = game({ stats: { gd: 13, prog: 11, graf: 9, audio: 6 } })
+    expect(previewPlay(g, 'autocompletamento#1')?.wins).toBe(true)
+  })
+})
