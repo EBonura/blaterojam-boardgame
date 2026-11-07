@@ -11,9 +11,6 @@ export function App() {
   const s = roomState.value
   return (
     <div class="app">
-      <header class="topbar">
-        <span class="brand">BLATERO JAM</span>
-      </header>
       <main class="screen">
         {status.value === 'idle' ? <Home /> : !s ? <Searching /> : s.phase === 'lobby' ? <Lobby /> : <InGame />}
       </main>
@@ -30,7 +27,10 @@ function Home() {
   return (
     <section class="home">
       <KudaBadge large />
-      <h1>{t('title')}</h1>
+      <h1 aria-label={t('title')}>
+        {'BLATERO'.split('').map((ch, i) => <span class={`c${(i % 4) + 1}`}>{ch}</span>)}
+        <small>{t('subtitle')}</small>
+      </h1>
       <label class="field">
         <span>{t('yourName')}</span>
         <input value={name} maxLength={16} onInput={(e) => setName(e.currentTarget.value)} autocomplete="nickname" />

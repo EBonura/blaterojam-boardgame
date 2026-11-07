@@ -19,7 +19,7 @@ const APP_ID = 'blaterojam-boardgame-taranto-2026-v1'
 // Phones find each other through Nostr relays: these five were measured as reliable
 // for Palermo Drive (palermo-drive/src/p2p/relays.js), measured as reliable for Palermo Drive (palermo-drive/src/p2p/relays.js),
 // instead of Trystero picking from 29 volunteer relays, some of which rate-limit or go quiet.
-const NOSTR_RELAYS = ['nos.lol', 'nostr.chaima.info', 'nostr.christiansass.de', 'nostr.stakey.net', 'relay.bitmacro.cloud'].map((h) => 'wss://' + h)
+const NOSTR_RELAYS = ['nos.lol', 'nostr.chaima.info', 'nostr.christiansass.de', 'relay.grigic.org', 'relay.bitmacro.cloud'].map((h) => 'wss://' + h)
 
 // Optional TURN relay, for networks where phones can't connect directly (mobile
 // data, Wi-Fi that isolates devices). Set at build time, e.g. from a free

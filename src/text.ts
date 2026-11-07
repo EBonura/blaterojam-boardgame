@@ -1,6 +1,7 @@
 // All UI text. The game is in Italian only.
 const strings = {
-  title: 'Blatero Game Jam: il gioco da tavolo',
+  title: 'BLATERO, il gioco da tavolo della Blatero Game Jam',
+  subtitle: 'Il gioco da tavolo della game jam',
   byKuda: 'Un gioco di KUDA Games',
   yourName: 'Il tuo nome',
   createRoom: 'Crea una stanza',

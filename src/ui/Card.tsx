@@ -7,7 +7,7 @@ type Props = {
   kind?: 'play' | 'imprevisto'
   dim?: boolean
   selected?: boolean
-  onClick?: () => void
+  onClick?: (e: MouseEvent) => void
   /** Small hand-size card: short stat names, numbers take the space. */
   compact?: boolean
 }

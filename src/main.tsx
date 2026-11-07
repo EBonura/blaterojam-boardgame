@@ -1,5 +1,7 @@
 import { render } from 'preact'
 import { App } from './ui/App'
+import '@fontsource/silkscreen/400.css'
+import '@fontsource/silkscreen/700.css'
 import './style.css'
 import { startCpuDriver } from './net/cpuDriver'
 

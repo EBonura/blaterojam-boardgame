@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
 import { roomState, connected, myId, dispatch, leaveRoom } from '../net/session'
 import { t } from '../text'
-import { DISPLAY_ORDER, STAT_LABEL, STAT_SHORT } from '../cards/effects'
+import { DISPLAY_ORDER, STAT_SHORT } from '../cards/effects'
 import {
   STAT_NAME, THRESHOLDS, BUFFER_MIN, OVERFLOW, LOSS_OVERFLOWS, JOLLY_MAX,
   currentPlayer, sheetOf, inBuffer, isLegal, needsStat, playCard, imprevisto,
@@ -16,17 +16,27 @@ const send = (move: Move) => dispatch({ type: 'move', id: myId.value, move })
 /** Connected devices plus the CPU seats, which are always at the table. */
 const here = () => present(roomState.value!, connected.value)
 const cpu = (id: string) => isCpu(roomState.value!, id)
+const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/** A card picked from the hand, with where it was on screen so it can fly from there. */
+type Picked = { card: string; from: DOMRect }
 
 export function GameScreen() {
   const g = roomState.value!.game!
+  const [picked, setPicked] = useState<Picked | null>(null)
+  // A new hand (or a new turn) drops any card that was being looked at.
+  const handKey = g.hand.join(',') + g.turn
+  useEffect(() => setPicked(null), [handKey])
+
   return (
     <section class="gs">
       <Players g={g} />
-      <SheetBar g={g} />
-      <Board g={g} />
-      <TurnBar g={g} />
-      <Hand g={g} />
+      <Tape g={g} />
+      <Crt g={g} />
       <EventLog g={g} />
+      <TurnBar g={g} />
+      <Hand g={g} picked={picked?.card ?? null} onPick={setPicked} />
+      {picked && <Stage key={picked.card} g={g} picked={picked} onClose={() => setPicked(null)} />}
       <Reveal g={g} />
       {g.result !== 'playing' && <EndScreen g={g} />}
     </section>
@@ -38,7 +48,7 @@ function Players({ g }: { g: GameState }) {
   const turn = currentPlayer(g)
   return (
     <div class="pstrip">
-      <span class="ps-code">{s.code}</span>
+      <span class="ps-code px">{s.code}</span>
       {g.order.map((id) => (
         <span class={`ps ${id === turn ? 'turn' : ''} ${here().has(id) ? '' : 'away'} ${id === myId.value ? 'me' : ''}`}>
           {nameOf(id)}
@@ -49,122 +59,129 @@ function Players({ g }: { g: GameState }) {
   )
 }
 
-function SheetBar({ g }: { g: GameState }) {
+/** The game sheet as a cassette: the title on the label, targets beside the reels, the turn on the tape counter. */
+function Tape({ g }: { g: GameState }) {
   const sh = sheetOf(g)
+  const lastSeq = g.events.at(-1)?.seq ?? 0
+  const [spin, setSpin] = useState(false)
+  useEffect(() => {
+    setSpin(true)
+    const t = setTimeout(() => setSpin(false), 900)
+    return () => clearTimeout(t)
+  }, [lastSeq])
+  const target = (st: Stat) => (
+    <div class={`tt t-${st} ${g.stats[st] === sh.target[st] ? 'ok' : ''}`}>
+      <span>{STAT_SHORT[st]}</span>
+      <b>{sh.target[st]}</b>
+    </div>
+  )
   return (
-    <div class="sheetbar parch">
-      <div class="sb-top">
-        <img src={`./cards/art/${sh.id}.svg`} alt="" />
-        <div class="sb-name">
-          <div class="sb-label">Scheda videogioco · {sh.difficulty}</div>
-          <div class="sb-title">{sh.title}</div>
-        </div>
-        <div class="sb-turn">
-          <span>Turno</span>
-          <b>{g.turn + 1}</b>
-        </div>
-      </div>
-      <div class="sb-targets">
-        {DISPLAY_ORDER.map((st) => (
-          <div class={`sb-t t-${st} ${g.stats[st] === sh.target[st] ? 'ok' : ''}`}>
-            <span>{STAT_SHORT[st]}</span>
-            <b>{sh.target[st]}</b>
+    <div class="tape" role="group" aria-label={`Scheda videogioco: ${sh.title}, ${sh.difficulty}`}>
+      <i class="screw s1" /><i class="screw s2" /><i class="screw s3" /><i class="screw s4" />
+      <div class="label">
+        <div class="stripes" />
+        <div class="lt-top">
+          <div class="lt-name">
+            <div class="lt-title px">{sh.title}</div>
+            <div class="lt-sub">Scheda videogioco · {sh.difficulty}</div>
           </div>
-        ))}
+          <div class="counter">
+            <span>Turno</span>
+            <b key={g.turn} class="px">{String(g.turn + 1).padStart(3, '0')}</b>
+          </div>
+        </div>
+        <div class="deck">
+          {DISPLAY_ORDER.slice(0, 2).map(target)}
+          <div class={`window ${spin ? 'spin' : ''}`}>
+            <i class="reel" />
+            <i class="band" />
+            <i class="reel" />
+          </div>
+          {DISPLAY_ORDER.slice(2).map(target)}
+        </div>
       </div>
     </div>
   )
 }
 
-// Board geometry (SVG user units): four columns 85 wide, value 0 at the top, 20 at the bottom.
-const COL_W = 85
-const Y0 = 22
-const UNIT = 12.4
-const yOf = (v: number) => Y0 + v * UNIT
-const INK_TONE: Record<string, string> = { gd: '#b4560a', prog: '#1d5b9b', graf: '#a52a68', audio: '#2e7a2e' }
+/** Remembers the previous value of something across renders. */
+function usePrevious<T>(v: T): T {
+  const ref = useRef(v)
+  const prev = ref.current
+  ref.current = v
+  return prev
+}
 
-/** KUDA's board: four carved tracks on parchment, a gold ring that slides down, Overflow (20) at the bottom. */
-function Board({ g }: { g: GameState }) {
+/** The board: a CRT with one bar of 20 boxes per stat that light up as the stat grows. */
+function Crt({ g }: { g: GameState }) {
   const target = sheetOf(g).target
-  const H = yOf(OVERFLOW) + 16
+  const prev = usePrevious(g.stats)
+  const lastSeq = g.events.at(-1)?.seq ?? 0
+  const prevSeq = usePrevious(lastSeq)
+  // Rows that overflowed in the latest events flash red.
+  const flashed = new Set(g.events.filter((e) => e.seq > prevSeq && e.kind === 'overflow').map((e) => e.stat))
   return (
-    <div class="board parch">
-      <div class="cols">
+    <div class={`crt ${inBuffer(g) ? 'buffer' : ''}`}>
+      <div class="glass">
         {DISPLAY_ORDER.map((st) => (
-          <div class={`col t-${st} ${g.stats[st] === target[st] ? 'ok' : ''}`}>
-            <div class="col-name">{st === 'prog' ? 'Program\u00ADmazione' : STAT_LABEL[st]}</div>
-            <div class="col-val">{g.stats[st]}</div>
-          </div>
+          <Bar key={st} st={st} v={g.stats[st]} from={prev[st]} t={target[st]} lost={g.overflowed.includes(st)} flash={flashed.has(st)} />
         ))}
+        <div class="scale px" aria-hidden="true">
+          {[0, 7, 11, 13, 15, 20].map((n) => (
+            <span style={{ gridColumn: Math.max(1, n) }} class={n === 0 ? 'zero' : ''}>{n}</span>
+          ))}
+        </div>
       </div>
-      <svg class="tracks" viewBox={`0 0 ${COL_W * 4} ${H}`} role="img"
-        aria-label={DISPLAY_ORDER.map((st) => `${STAT_LABEL[st]} ${g.stats[st]} su ${target[st]}`).join(', ')}>
-        <defs>
-          <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#fff2b0" /><stop offset=".45" stop-color="#d9a426" /><stop offset=".7" stop-color="#8a5a10" /><stop offset="1" stop-color="#f3cf63" />
-          </linearGradient>
-          <pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <rect width="5" height="5" fill="#c98a2a" /><rect width="2.2" height="5" fill="#8f2a12" />
-          </pattern>
-        </defs>
-        {DISPLAY_ORDER.map((st, i) => {
-          const cx = COL_W * i + COL_W / 2
-          const v = g.stats[st]
-          const t = target[st]
-          const len = yOf(OVERFLOW) - Y0
+      <div class="bezel">
+        <span class="px brand">BLATERO</span>
+        <span class="of-count">
+          Overflow
+          {Array.from({ length: LOSS_OVERFLOWS }, (_, i) => <i class={i < g.overflowed.length ? 'used' : ''} />)}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function Bar({ st, v, from, t, lost, flash }: { st: Stat; v: number; from: number; t: number; lost: boolean; flash: boolean }) {
+  // Remount the boxes when the value changes, so the fill and drain animations replay.
+  const [gen, setGen] = useState(0)
+  const [last, setLast] = useState({ from: v, to: v })
+  useEffect(() => {
+    if (from !== v) (setLast({ from, to: v }), setGen((n) => n + 1))
+  }, [v])
+  return (
+    <div class={`bar t-${st} ${v === t ? 'ok' : ''} ${flash ? 'flash' : ''}`} aria-label={`${STAT_NAME[st]} ${v}, obiettivo ${t}`}>
+      <span class="bar-name">
+        {STAT_SHORT[st]}
+        {lost && <i class="lost" title="Già andata in overflow">✕</i>}
+      </span>
+      <div class="boxes" key={`boxes-${gen}`}>
+        {Array.from({ length: OVERFLOW }, (_, i) => {
+          const k = i + 1
+          const on = k <= v
+          const filling = on && k > last.from && last.to > last.from
+          const draining = !on && k <= last.from && k > last.to
+          const step = filling ? k - last.from - 1 : draining ? last.from - k : 0
           return (
-            <g class={`trk t-${st}`}>
-              {/* carved groove */}
-              <rect x={cx - 8} y={Y0 - 9} width="16" height={len + 18} rx="8" fill="#7a5530" />
-              <rect x={cx - 6} y={Y0 - 7} width="12" height={len + 14} rx="6" fill="#3d2714" />
-              <rect x={cx + 3} y={Y0 - 4} width="1.5" height={len + 8} rx=".75" fill="#9b7448" opacity=".6" />
-              {/* buffer 16-19 */}
-              <rect x={cx - 6} y={yOf(BUFFER_MIN) - UNIT / 2} width="12" height={UNIT * 4} fill="url(#hatch)" opacity=".9" />
-              {/* progress in the stat's ink */}
-              <rect class="trk-fill" x={cx - 3.5} y={Y0} width="7" height={len} rx="3.5" fill={INK_TONE[st]}
-                style={{ transform: `scaleY(${v / OVERFLOW})` }} />
-              {/* minor ticks */}
-              {Array.from({ length: OVERFLOW - 1 }, (_, k) => k + 1).map((k) => (
-                <line x1={cx + 10} x2={cx + (k % 5 === 0 ? 16 : 13)} y1={yOf(k)} y2={yOf(k)} stroke="#3b2616" stroke-width="1" opacity=".45" />
-              ))}
-              {/* Imprevisto thresholds */}
-              {THRESHOLDS.map((k) => (
-                <g>
-                  <rect x={cx - 15} y={yOf(k) - 3} width="6" height="6" transform={`rotate(45 ${cx - 12} ${yOf(k)})`} fill="#a3122a" />
-                  <text x={cx - 18} y={yOf(k) + 3.5} class="trk-n red" text-anchor="end">{k}</text>
-                </g>
-              ))}
-              {/* end of free memory */}
-              <rect x={cx - 14} y={yOf(15) - 1.5} width="28" height="3" rx="1.5" fill="#3b2616" />
-              <text x={cx - 17} y={yOf(15) + 4} class="trk-n bold" text-anchor="end">15</text>
-              {/* target flag */}
-              <g class="trk-target">
-                <rect x={cx - 8} y={yOf(t) - 1} width="16" height="2" fill="url(#gold)" />
-                <line x1={cx + 9} x2={cx + 9} y1={yOf(t) - 13} y2={yOf(t) + 1} stroke="#3b2616" stroke-width="1.6" />
-                <path d={`M${cx + 9.8} ${yOf(t) - 13} H${cx + 32} L${cx + 28} ${yOf(t) - 7.5} L${cx + 32} ${yOf(t) - 2} H${cx + 9.8} Z`} fill="url(#gold)" stroke="#6b4a10" stroke-width=".8" />
-                <text x={cx + 19.5} y={yOf(t) - 4.2} class="trk-flag" text-anchor="middle">{t}</text>
-              </g>
-              {/* overflow seal */}
-              <g class={`seal ${g.overflowed.includes(st) ? 'used' : ''}`}>
-                <circle cx={cx} cy={yOf(OVERFLOW)} r="10.5" fill="#7d1010" />
-                <circle cx={cx} cy={yOf(OVERFLOW)} r="8" fill="#a3161a" stroke="#d64a3a" stroke-width=".8" stroke-dasharray="2 1.4" />
-                <text x={cx} y={yOf(OVERFLOW) + 3.4} class="seal-n" text-anchor="middle">20</text>
-              </g>
-              {/* the ring (anello) */}
-              <g class="ring" style={{ transform: `translate(${cx}px, ${yOf(v)}px)` }}>
-                <ellipse cx="0" cy="2.2" rx="15" ry="6.2" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="4" />
-                <ellipse cx="0" cy="0" rx="15" ry="6.2" fill="none" stroke="url(#gold)" stroke-width="4" />
-                <ellipse cx="0" cy="0" rx="15" ry="6.2" fill="none" stroke="#5a3a08" stroke-width=".6" />
-              </g>
-            </g>
+            <i
+              class={[
+                'box',
+                on && 'on',
+                THRESHOLDS.includes(k) && 'th',
+                k >= BUFFER_MIN && k < OVERFLOW && 'buf',
+                k === OVERFLOW && 'of',
+                k === t && 'tg',
+                k === v && 'cur',
+                filling && 'fill',
+                draining && 'drain',
+              ].filter(Boolean).join(' ')}
+              style={step ? { animationDelay: `${step * 45}ms` } : undefined}
+            />
           )
         })}
-      </svg>
-      <div class="board-foot">
-        <span>Overflow</span>
-        {Array.from({ length: LOSS_OVERFLOWS }, (_, i) => <i class={`mini-seal ${i < g.overflowed.length ? 'used' : ''}`} />)}
-        <span class="bf-hint">a {LOSS_OVERFLOWS} si perde</span>
       </div>
+      <b class="bar-v" key={`v-${v}`}>{v}</b>
     </div>
   )
 }
@@ -174,14 +191,27 @@ function TurnBar({ g }: { g: GameState }) {
   const mine = who === myId.value
   const away = !here().has(who)
   const notes: string[] = []
-  if (inBuffer(g)) notes.push('Buffer attivo: solo carte Base')
-  if (g.blind) notes.push('Blackout: carta a caso, coperta')
+  if (inBuffer(g)) notes.push('Buffer: solo carte Base')
+  if (g.blind) notes.push('Blackout: carta coperta')
   if (g.toPlay > 1) notes.push(`Tempo quasi scaduto: ancora ${g.toPlay} carte`)
+  const noLegal = mine && !g.blind && !g.hand.some((c) => isLegal(g, c))
   return (
-    <div class={`turnbar ${mine ? 'mine' : ''}`}>
-      <div class="tb-who">{mine ? 'Tocca a te!' : `Tocca a ${nameOf(who)}`}</div>
-      {cpu(who) && g.result === 'playing' && <div class="tb-note">{t('cpuThinking', { name: nameOf(who) })}</div>}
-      {notes.map((n) => <div class="tb-note">{n}</div>)}
+    <div class={`turnbar ${mine ? 'mine' : ''}`} key={`${g.turn}-${who}`}>
+      <div class="tb-who px">{mine ? 'Tocca a te!' : `Tocca a ${nameOf(who)}`}</div>
+      {cpu(who) && g.result === 'playing' && (
+        <div class="tb-note thinking">
+          {t('cpuThinking', { name: nameOf(who) })}
+          <i />
+          <i />
+          <i />
+        </div>
+      )}
+      {notes.length > 0 && <div class="tb-note">{notes.join(' · ')}</div>}
+      {noLegal && (
+        <button class="primary small" onClick={() => send({ type: 'pass' })}>
+          Nessuna carta giocabile: passa
+        </button>
+      )}
       {away && !mine && g.result === 'playing' && (
         <button class="ghost" onClick={() => send({ type: 'skipAbsent' })}>
           {nameOf(who)} è disconnesso: salta il turno
@@ -191,81 +221,120 @@ function TurnBar({ g }: { g: GameState }) {
   )
 }
 
-function Hand({ g }: { g: GameState }) {
+/** The hand as a fan. Only the player whose turn it is sees the faces. */
+function Hand({ g, picked, onPick }: { g: GameState; picked: string | null; onPick: (p: Picked) => void }) {
   const mine = currentPlayer(g) === myId.value && g.result === 'playing'
-  const [sel, setSel] = useState<string | null>(null)
-  const [stat, setStat] = useState<Stat | null>(null)
-  const [value, setValue] = useState(10)
+  const n = g.hand.length
+  const fan = (i: number) => ({ '--o': i - (n - 1) / 2, '--d': `${i * 90}ms` }) as Record<string, string | number>
+  const key = g.hand.join(',') + g.turn
 
-  // Reset the selection whenever the hand changes.
-  const handKey = g.hand.join(',') + g.turn
-  useEffect(() => (setSel(null), setStat(null)), [handKey])
-
-  if (!mine) {
+  if (!mine || g.blind) {
     return (
-      <div class="hand others">
-        {g.hand.map(() => <CardBack />)}
-      </div>
-    )
-  }
-
-  if (g.blind) {
-    return (
-      <div class="hand">
-        <p class="hint">Blackout! Scegli una carta coperta: verrà giocata senza vederla.</p>
-        <div class="cards">
-          {g.hand.map((c, i) => <CardBack label={`Carta coperta ${i + 1}`} onClick={() => send({ type: 'play', card: c })} />)}
+      <div class={`hand ${mine ? 'blind' : 'others'}`}>
+        {mine && <p class="hint">Blackout! Scegli una carta coperta: verrà giocata senza vederla.</p>}
+        <div class="cards" key={key}>
+          {g.hand.map((c, i) => (
+            <div class="slot" style={fan(i)}>
+              <CardBack label={mine ? `Carta coperta ${i + 1}` : undefined} onClick={mine ? () => send({ type: 'play', card: c }) : undefined} />
+            </div>
+          ))}
         </div>
       </div>
     )
   }
 
-  const anyLegal = g.hand.some((c) => isLegal(g, c))
-  const card = sel ? playCard(sel) : null
-  const ready = sel && (!needsStat(sel) || stat)
   return (
     <div class="hand">
-      <div class="cards">
-        {g.hand.map((c) => (
-          <Card compact card={c} dim={!isLegal(g, c)} selected={sel === c} onClick={isLegal(g, c) ? () => (setSel(c), setStat(null)) : undefined} />
-        ))}
-      </div>
-      {!anyLegal && (
-        <button class="primary" onClick={() => send({ type: 'pass' })}>
-          Nessuna carta giocabile: passa
-        </button>
-      )}
-      {card && (
-        <div class="choose parch">
-          <div class="choose-card"><Card card={sel!} /></div>
-          {needsStat(sel!) && (
-            <>
-              <div class="hint">{card.effect.type === 'set' ? 'Quale statistica vuoi impostare?' : 'Su quale statistica?'}</div>
-              <div class="stats">
-                {DISPLAY_ORDER.map((s) => (
-                  <button class={stat === s ? 'on' : ''} onClick={() => setStat(s)}>
-                    {STAT_NAME[s]}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-          {card.effect.type === 'set' && stat && (
-            <div class="stepper">
-              <button onClick={() => setValue(Math.max(0, value - 1))} aria-label="Meno">−</button>
-              <b>{value}</b>
-              <button onClick={() => setValue(Math.min(JOLLY_MAX, value + 1))} aria-label="Più">+</button>
+      <div class="cards" key={key}>
+        {g.hand.map((c, i) => {
+          const legal = isLegal(g, c)
+          return (
+            <div class={`slot ${picked === c ? 'gone' : ''}`} style={fan(i)}>
+              <Card
+                compact
+                card={c}
+                dim={!legal}
+                onClick={legal ? (e?: MouseEvent) => onPick({ card: c, from: (e?.currentTarget as HTMLElement).getBoundingClientRect() }) : undefined}
+              />
             </div>
-          )}
-          <button
-            class="primary"
-            disabled={!ready}
-            onClick={() => send({ type: 'play', card: sel!, stat: stat ?? undefined, value: card.effect.type === 'set' ? value : undefined })}
-          >
-            Gioca {card.title}
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/** The picked card in the middle of the screen: choose the stat if needed, then Gioca sends it into the CRT. */
+function Stage({ g, picked, onClose }: { g: GameState; picked: Picked; onClose: () => void }) {
+  const card = playCard(picked.card)
+  const [stat, setStat] = useState<Stat | null>(null)
+  const [value, setValue] = useState(10)
+  const [leaving, setLeaving] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const ready = !needsStat(picked.card) || !!stat
+
+  // Fly in from where the card sat in the fan.
+  useLayoutEffect(() => {
+    const el = cardRef.current
+    if (!el || calm()) return
+    const to = el.getBoundingClientRect()
+    const f = picked.from
+    const dx = f.left + f.width / 2 - (to.left + to.width / 2)
+    const dy = f.top + f.height / 2 - (to.top + to.height / 2)
+    el.animate(
+      [{ transform: `translate(${dx}px, ${dy}px) scale(${f.width / to.width}) rotate(-6deg)` }, { transform: 'translate(0,0) scale(1.06) rotate(1deg)', offset: 0.75 }, { transform: 'none' }],
+      { duration: 460, easing: 'cubic-bezier(.2,.9,.3,1)' },
+    )
+  }, [])
+
+  const play = () => {
+    const move: Move = { type: 'play', card: picked.card, stat: stat ?? undefined, value: card.effect.type === 'set' ? value : undefined }
+    const el = cardRef.current
+    const crt = document.querySelector('.crt')?.getBoundingClientRect()
+    if (!el || !crt || calm()) return send(move)
+    setLeaving(true)
+    const from = el.getBoundingClientRect()
+    const dx = crt.left + crt.width / 2 - (from.left + from.width / 2)
+    const dy = crt.top + crt.height / 2 - (from.top + from.height / 2)
+    const a = el.animate(
+      [{ transform: 'none' }, { transform: 'translateY(12px) scale(1.04)', offset: 0.18 }, { transform: `translate(${dx}px, ${dy}px) scale(.18) rotate(18deg)`, opacity: 0.2 }],
+      { duration: 520, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' },
+    )
+    a.onfinish = () => send(move)
+  }
+
+  return (
+    <div class={`stage ${leaving ? 'leaving' : ''}`} onClick={(e) => e.target === e.currentTarget && !leaving && onClose()}>
+      <div class="stage-card" ref={cardRef}>
+        <Card card={picked.card} />
+      </div>
+      <div class="choose">
+        {needsStat(picked.card) && (
+          <>
+            <div class="hint">{card.effect.type === 'set' ? 'Quale statistica vuoi impostare?' : 'Su quale statistica?'}</div>
+            <div class="stats">
+              {DISPLAY_ORDER.map((s) => (
+                <button class={`t-${s} ${stat === s ? 'on' : ''}`} onClick={() => setStat(s)}>
+                  {STAT_NAME[s]} <b>{g.stats[s]}</b>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+        {card.effect.type === 'set' && stat && (
+          <div class="stepper">
+            <button onClick={() => setValue(Math.max(0, value - 1))} aria-label="Meno">−</button>
+            <b class="px">{value}</b>
+            <button onClick={() => setValue(Math.min(JOLLY_MAX, value + 1))} aria-label="Più">+</button>
+          </div>
+        )}
+        <div class="choose-actions">
+          <button class="ghost" onClick={onClose} disabled={leaving}>Annulla</button>
+          <button class="primary px" disabled={!ready || leaving} onClick={play}>
+            Gioca
           </button>
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -291,7 +360,7 @@ function describe(e: GameEvent): string | null {
 }
 
 function EventLog({ g }: { g: GameState }) {
-  const lines = g.events.map((e) => [e.seq, describe(e)] as const).filter(([, t]) => t).slice(-6).reverse()
+  const lines = g.events.map((e) => [e.seq, describe(e)] as const).filter(([, t]) => t).slice(-2).reverse()
   return (
     <ol class="log">
       {lines.map(([seq, t]) => <li key={seq}>{t}</li>)}
@@ -299,12 +368,14 @@ function EventLog({ g }: { g: GameState }) {
   )
 }
 
-/** Shows each played card and Imprevisto big for a moment, to everyone. */
+/** Shows each played card and Imprevisto big for a moment, to everyone (your own plays you have just seen). */
 function Reveal({ g }: { g: GameState }) {
   const [seen, setSeen] = useState(() => g.events.at(-1)?.seq ?? 0)
   const [queue, setQueue] = useState<GameEvent[]>([])
   useEffect(() => {
-    const fresh = g.events.filter((e) => e.seq > seen && (e.kind === 'play' || e.kind === 'imprevisto' || e.kind === 'illegal'))
+    const fresh = g.events.filter(
+      (e) => e.seq > seen && (e.kind === 'imprevisto' || e.kind === 'illegal' || (e.kind === 'play' && e.player !== myId.value)),
+    )
     if (fresh.length) setQueue((q) => [...q, ...fresh])
     const last = g.events.at(-1)?.seq
     if (last && last > seen) setSeen(last)
@@ -317,7 +388,8 @@ function Reveal({ g }: { g: GameState }) {
   }, [cur?.seq])
   if (!cur) return null
   return (
-    <div class={`reveal ${cur.kind}`} onClick={() => setQueue((q) => q.slice(1))}>
+    <div class={`reveal ${cur.kind}`} key={cur.seq} onClick={() => setQueue((q) => q.slice(1))}>
+      {cur.kind === 'imprevisto' && <div class="burst px">IMPREVISTO!</div>}
       <div class="rv-caption">{describe(cur)}</div>
       <div class="rv-card">
         <Card card={cur.card!} kind={cur.kind === 'imprevisto' ? 'imprevisto' : 'play'} />
@@ -327,11 +399,20 @@ function Reveal({ g }: { g: GameState }) {
   )
 }
 
+const CONFETTI = ['#7fe0b0', '#ffec27', '#ff77a8', '#29adff', '#ffa300']
+
 function EndScreen({ g }: { g: GameState }) {
   const won = g.result === 'won'
   return (
     <div class={`endscreen ${won ? 'won' : 'lost'}`}>
-      <h2>{won ? 'Gioco completato!' : 'Game over'}</h2>
+      {won && (
+        <div class="confetti" aria-hidden="true">
+          {Array.from({ length: 48 }, (_, i) => (
+            <i style={{ left: `${(i * 37) % 100}%`, background: CONFETTI[i % 5], animationDelay: `${(i % 12) * 90}ms`, animationDuration: `${1600 + (i % 7) * 180}ms` }} />
+          ))}
+        </div>
+      )}
+      <h2 class="px">{won ? 'Gioco completato!' : 'Game over'}</h2>
       <p>{won ? `${sheetOf(g).title} è pronto per la consegna.` : `${LOSS_OVERFLOWS} statistiche sono andate in overflow.`}</p>
       <button class="primary" onClick={() => dispatch({ type: 'restart', id: myId.value })}>Nuova partita</button>
       <button class="ghost" onClick={leaveRoom}>Torna al menu</button>
