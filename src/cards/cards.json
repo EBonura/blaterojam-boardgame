@@ -1,27 +1,87 @@
 {
-  "_note": "SAMPLE cards to settle the look. Replace with KUDA's real cards once the photos are transcribed.",
-  "kinds": {
-    "risorsa": {
-      "color": "#ffa300",
-      "label": "Risorsa"
-    },
-    "evento": {
-      "color": "#ff004d",
-      "label": "Evento"
-    }
+  "stats": [
+    { "id": "gd", "name": "Game Design" },
+    { "id": "prog", "name": "Programmazione" },
+    { "id": "graf", "name": "Grafica" },
+    { "id": "audio", "name": "Audio" }
+  ],
+  "frames": {
+    "verde": { "color": "#00e436", "ink": "#000000" },
+    "rosso": { "color": "#ff004d", "ink": "#fff1e8" },
+    "giallo": { "color": "#ffec27", "ink": "#000000" },
+    "arcobaleno": { "color": "#ff77a8", "ink": "#000000", "rainbow": true },
+    "argento": { "color": "#c2c3c7", "ink": "#000000", "foil": true },
+    "bianco": { "color": "#fff1e8", "ink": "#000000" }
   },
-  "cards": [
-    {
-      "id": "caffe",
-      "kind": "risorsa",
-      "title": "Caffè",
-      "text": "Testo di esempio. Il vero testo arriva dalle carte di KUDA Games."
-    },
-    {
-      "id": "bug",
-      "kind": "evento",
-      "title": "Bug in produzione",
-      "text": "Testo di esempio. Il vero testo arriva dalle carte di KUDA Games."
-    }
+  "levels": {
+    "base": "Base",
+    "speciale": "Speciale",
+    "jolly": "Jolly",
+    "mentor": "Mentor",
+    "imprevisto": "Imprevisto"
+  },
+  "play": [
+    { "id": "game-designer", "title": "Game Designer", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "gd": 3 } }, "text": "+3 Game Design" },
+    { "id": "programmatore", "title": "Programmatore", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "prog": 3 } }, "text": "+3 Programmazione" },
+    { "id": "grafico", "title": "Grafico", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "graf": 3 } }, "text": "+3 Grafica" },
+    { "id": "compositore", "title": "Compositore", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "audio": 3 } }, "text": "+3 Audio" },
+    { "id": "lore-drop", "title": "Lore drop", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "gd": 2 } }, "text": "+2 Game Design" },
+    { "id": "diagramma-di-flusso", "title": "Diagramma di flusso", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "gd": 1 } }, "text": "+1 Game Design" },
+    { "id": "autocompletamento", "title": "Autocompletamento", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "prog": 2 } }, "text": "+2 Programmazione" },
+    { "id": "editor-di-codice", "title": "Editor di codice", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "prog": 1 } }, "text": "+1 Programmazione" },
+    { "id": "pixel-art", "title": "Pixel art", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "graf": 2 } }, "text": "+2 Grafica" },
+    { "id": "tavoletta-grafica", "title": "Tavoletta grafica", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "graf": 1 } }, "text": "+1 Grafica" },
+    { "id": "audio-stereo", "title": "Audio stereo", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "audio": 2 } }, "text": "+2 Audio" },
+    { "id": "audio-mono", "title": "Audio mono", "copies": 2, "frame": "verde", "level": "base", "effect": { "type": "add", "deltas": { "audio": 1 } }, "text": "+1 Audio" },
+    { "id": "energy-drink", "title": "Energy drink", "copies": 3, "frame": "verde", "level": "base", "effect": { "type": "choice", "amount": 2 }, "text": "+2 in una statistica a scelta" },
+    { "id": "caffe", "title": "Caffè", "copies": 5, "frame": "verde", "level": "base", "effect": { "type": "choice", "amount": 1 }, "text": "+1 in una statistica a scelta" },
+    { "id": "zip", "title": "Compressione file .zip", "copies": 6, "frame": "rosso", "level": "base", "effect": { "type": "choice", "amount": -1 }, "text": "-1 in una statistica a scelta" },
+    { "id": "rar", "title": "Compressione file .rar", "copies": 4, "frame": "rosso", "level": "base", "effect": { "type": "choice", "amount": -2 }, "text": "-2 in una statistica a scelta" },
+    { "id": "60-fps", "title": "60 FPS", "copies": 1, "frame": "giallo", "level": "speciale", "effect": { "type": "add", "deltas": { "gd": 1, "prog": 3, "graf": -2 } }, "text": "+3 Programmazione, +1 Game Design, -2 Grafica" },
+    { "id": "generatore-sfx", "title": "Generatore SFX", "copies": 1, "frame": "giallo", "level": "speciale", "effect": { "type": "add", "deltas": { "graf": -1, "audio": 3 } }, "text": "+3 Audio, -1 Grafica" },
+    { "id": "modello-low-poly", "title": "Modello low-poly", "copies": 1, "frame": "giallo", "level": "speciale", "effect": { "type": "add", "deltas": { "gd": -2, "graf": 3, "audio": 1 } }, "text": "+3 Grafica, +1 Audio, -2 Game Design" },
+    { "id": "engine-2d", "title": "Engine 2D", "copies": 1, "frame": "giallo", "level": "speciale", "effect": { "type": "add", "deltas": { "gd": 1, "prog": 2, "graf": -1 } }, "text": "+2 Programmazione, +1 Game Design, -1 Grafica" },
+    { "id": "grafica-placeholder", "title": "Grafica Placeholder", "copies": 1, "frame": "giallo", "level": "speciale", "effect": { "type": "add", "deltas": { "gd": 3, "prog": 1, "graf": -2 } }, "text": "+3 Game Design, +1 Programmazione, -2 Grafica" },
+    { "id": "brainstorming", "title": "Brainstorming", "copies": 5, "frame": "giallo", "level": "speciale", "effect": { "type": "add", "deltas": { "gd": 1, "prog": 1, "graf": 1, "audio": 1 } }, "text": "+1 in ogni statistica" },
+    { "id": "sprite-3d", "title": "Sprite 3D", "copies": 1, "frame": "giallo", "level": "speciale", "effect": { "type": "add", "deltas": { "gd": -1, "graf": 2 } }, "text": "+2 Grafica, -1 Game Design" },
+    { "id": "blatero", "title": "BLATERO", "copies": 3, "frame": "arcobaleno", "level": "jolly", "effect": { "type": "set", "min": 0, "max": 15 }, "text": "Porta una statistica a un valore a scelta (da 0 a 15)" },
+    { "id": "pico-8", "title": "PICO-8", "copies": 1, "frame": "argento", "level": "mentor", "effect": { "type": "choice", "amount": 3 }, "text": "+3 in una statistica a scelta", "quote": ["“Voglio fare un open world in 4K”", "“Il massimo che posso fare è 16 colori.”"] },
+    { "id": "spaghetti-code", "title": "Spaghetti code", "copies": 1, "frame": "argento", "level": "mentor", "effect": { "type": "add", "deltas": { "gd": -1, "prog": 6, "graf": -1, "audio": -1 } }, "text": "+6 Programmazione, -1 Game Design, -1 Grafica, -1 Audio" },
+    { "id": "animazione-frame-by-frame", "title": "Animazione frame-by-frame", "copies": 1, "frame": "argento", "level": "mentor", "effect": { "type": "add", "deltas": { "gd": 1, "prog": -2, "graf": 4 } }, "text": "+4 Grafica, +1 Game Design, -2 Programmazione" },
+    { "id": "grayboxing", "title": "Grayboxing", "copies": 1, "frame": "argento", "level": "mentor", "effect": { "type": "add", "deltas": { "gd": 4, "prog": 2, "graf": -2 } }, "text": "+4 Game Design, +2 Programmazione, -2 Grafica" }
+  ],
+  "imprevisti": [
+    { "id": "troppi-poligoni", "title": "Troppi poligoni!", "effect": { "type": "reset", "stat": "graf" }, "text": "Grafica torna a 0" },
+    { "id": "audio-clipping", "title": "Audio clipping", "effect": { "type": "reset", "stat": "audio" }, "text": "Audio torna a 0" },
+    { "id": "patch-su-patch", "title": "Patch su patch", "effect": { "type": "reset", "stat": "prog" }, "text": "Programmazione torna a 0" },
+    { "id": "solo-un-ritocco", "title": "Solo un ritocco", "effect": { "type": "reset", "stat": "gd" }, "text": "Game Design torna a 0" },
+    { "id": "blackout", "title": "Blackout", "effect": { "type": "nextBlind" }, "text": "Il giocatore successivo gioca una carta a caso senza vederla" },
+    { "id": "cambio-idea", "title": "Cambio idea", "effect": { "type": "add", "deltas": { "gd": -5, "graf": -3 } }, "text": "-5 Game Design, -3 Grafica" },
+    { "id": "build-corrotta", "title": "Build corrotta", "effect": { "type": "add", "deltas": { "gd": -4, "prog": -4, "graf": -4, "audio": -4 } }, "text": "-4 in tutte le statistiche" },
+    { "id": "memoria-insufficiente", "title": "Memoria insufficiente", "effect": { "type": "nextDrawTwo" }, "text": "Il giocatore successivo pesca solo due carte" },
+    { "id": "merge-conflict", "title": "Merge conflict", "effect": { "type": "add", "deltas": { "prog": -6 } }, "text": "-6 Programmazione" },
+    { "id": "notte-in-bianco", "title": "Notte in bianco", "effect": { "type": "nextSkip" }, "text": "Il giocatore successivo salta il turno" },
+    { "id": "tempo-quasi-scaduto", "title": "Tempo quasi scaduto", "effect": { "type": "nextPlayTwo" }, "text": "Il giocatore successivo deve giocare 2 carte" },
+    { "id": "crash-improvviso", "title": "Crash improvviso", "effect": { "type": "undoLast" }, "text": "Annulla l’effetto dell’ultima carta giocata" },
+    { "id": "divergenze-creative", "title": "Divergenze creative", "effect": { "type": "swap", "a": "gd", "b": "prog" }, "text": "Scambia i valori di Game Design e Programmazione" },
+    { "id": "cambio-di-postazione", "title": "Cambio di postazione", "effect": { "type": "swap", "a": "graf", "b": "audio" }, "text": "Scambia i valori di Grafica e Audio" },
+    { "id": "brainstorming-infinito", "title": "Brainstorming infinito", "effect": { "type": "setAll", "value": 16 }, "text": "Tutte le statistiche vanno a 16" }
+  ],
+  "sheets": [
+    { "id": "arcade-retro", "title": "Arcade Retrò", "difficulty": "Facile", "target": { "gd": 7, "prog": 8, "graf": 5, "audio": 5 } },
+    { "id": "quiz-game", "title": "Quiz Game", "difficulty": "Facile", "target": { "gd": 10, "prog": 5, "graf": 6, "audio": 7 } },
+    { "id": "visual-novel", "title": "Visual Novel", "difficulty": "Medio", "target": { "gd": 11, "prog": 4, "graf": 10, "audio": 7 } },
+    { "id": "puzzle-game", "title": "Puzzle Game", "difficulty": "Medio", "target": { "gd": 12, "prog": 11, "graf": 7, "audio": 5 } },
+    { "id": "roguelike", "title": "Roguelike", "difficulty": "Medio", "target": { "gd": 11, "prog": 12, "graf": 8, "audio": 6 } },
+    { "id": "platform-2d", "title": "Platform 2D", "difficulty": "Difficile", "target": { "gd": 12, "prog": 11, "graf": 11, "audio": 6 } },
+    { "id": "gestionale", "title": "Gestionale", "difficulty": "Difficile", "target": { "gd": 13, "prog": 13, "graf": 9, "audio": 6 } },
+    { "id": "rhythm-game", "title": "Rhythm Game", "difficulty": "Difficile", "target": { "gd": 9, "prog": 10, "graf": 10, "audio": 14 } },
+    { "id": "racing-game", "title": "Racing Game", "difficulty": "Difficile", "target": { "gd": 9, "prog": 13, "graf": 13, "audio": 10 } },
+    { "id": "monster-collector", "title": "Monster Collector", "difficulty": "Molto difficile", "target": { "gd": 14, "prog": 13, "graf": 11, "audio": 9 } },
+    { "id": "tower-defense", "title": "Tower Defense", "difficulty": "Molto difficile", "target": { "gd": 14, "prog": 14, "graf": 11, "audio": 9 } },
+    { "id": "fps-multiplayer", "title": "FPS Multiplayer", "difficulty": "Molto difficile", "target": { "gd": 13, "prog": 15, "graf": 13, "audio": 11 } },
+    { "id": "survival-horror-3d", "title": "Survival Horror 3D", "difficulty": "Molto difficile", "target": { "gd": 12, "prog": 12, "graf": 14, "audio": 15 } },
+    { "id": "mmorpg", "title": "MMORPG", "difficulty": "Estremo", "target": { "gd": 15, "prog": 15, "graf": 13, "audio": 12 } },
+    { "id": "open-world-rpg", "title": "Open World RPG", "difficulty": "Estremo", "target": { "gd": 15, "prog": 15, "graf": 15, "audio": 15 } }
   ]
 }
