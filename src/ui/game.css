@@ -315,3 +315,12 @@
 
 /* The burst: the word sits well inside the star, away from its points. */
 .burst { font-size: clamp(15px, 5vw, 22px); padding: 34px 58px; }
+
+/* IMPREVISTO! in the same look as the "Soglia superata!" panel: dark wine, red glowing border, blinking red pixel text. */
+.burst { clip-path: none; background: rgba(40, 4, 16, .95); color: var(--red); font-size: clamp(18px, 6vw, 26px); padding: 12px 22px; border-radius: 8px;
+  box-shadow: 0 0 0 2px var(--red), 0 0 28px rgba(255, 0, 77, .65); animation: alert-in .35s cubic-bezier(.2, 1.6, .4, 1) both; }
+.burst::after { content: ""; }
+.reveal.imprevisto .burst { animation: alert-in-flat .35s cubic-bezier(.2, 1.6, .4, 1) both, blink .6s .35s steps(2) 4; }
+@keyframes alert-in-flat { from { transform: scale(.3); opacity: 0; } }
+.reveal.imprevisto { background: rgba(14, 6, 18, .9); }
+.reveal.imprevisto .rv-caption { color: var(--cream); }

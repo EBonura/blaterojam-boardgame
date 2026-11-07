@@ -51,10 +51,10 @@
     { "id": "grayboxing", "title": "Grayboxing", "copies": 1, "frame": "argento", "level": "mentor", "effect": { "type": "add", "deltas": { "gd": 4, "prog": 2, "graf": -2 } }, "text": "+4 Game Design, +2 Programmazione, -2 Grafica", "quote": ["Ogni livello è un grayboxing che ci ha creduto abbastanza."] }
   ],
   "imprevisti": [
-    { "id": "troppi-poligoni", "title": "Troppi poligoni!", "effect": { "type": "reset", "stat": "graf" }, "text": "Grafica torna a 0" },
-    { "id": "audio-clipping", "title": "Audio clipping", "effect": { "type": "reset", "stat": "audio" }, "text": "Audio torna a 0" },
+    { "id": "troppi-poligoni", "title": "Troppi poligoni!", "effect": { "type": "add", "deltas": { "graf": -10 } }, "text": "-10 Grafica" },
+    { "id": "audio-clipping", "title": "Audio clipping", "effect": { "type": "add", "deltas": { "audio": -5 } }, "text": "-5 Audio" },
     { "id": "patch-su-patch", "title": "Patch su patch", "effect": { "type": "reset", "stat": "prog" }, "text": "Programmazione torna a 0" },
-    { "id": "solo-un-ritocco", "title": "Solo un ritocco", "effect": { "type": "reset", "stat": "gd" }, "text": "Game Design torna a 0" },
+    { "id": "solo-un-ritocco", "title": "Solo un ritocco", "effect": { "type": "add", "deltas": { "gd": -7 } }, "text": "-7 Game Design" },
     { "id": "blackout", "title": "Blackout", "effect": { "type": "nextBlind" }, "text": "Il giocatore successivo gioca una carta a caso senza vederla" },
     { "id": "cambio-idea", "title": "Cambio idea", "effect": { "type": "add", "deltas": { "gd": -5, "graf": -3 } }, "text": "-5 Game Design, -3 Grafica" },
     { "id": "build-corrotta", "title": "Build corrotta", "effect": { "type": "add", "deltas": { "gd": -4, "prog": -4, "graf": -4, "audio": -4 } }, "text": "-4 in tutte le statistiche" },

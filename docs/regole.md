@@ -57,6 +57,7 @@ Il primo giocatore è scelto a caso.
 - Crash improvviso: la plancia torna com'era prima dell'ultima carta giocata, Overflow compresi.
 - Minimo 0, nessun underflow.
 - Le carte in mano sono visibili solo al giocatore di turno.
+- Imprevisti per statistica: Patch su patch porta Programmazione a 0; Troppi poligoni -10 Grafica; Solo un ritocco -7 Game Design; Audio clipping -5 Audio (prima tutti a 0).
 - Ordine delle statistiche sulla plancia e sulla scheda: Programmazione, Game Design, Grafica, Audio (come nello schizzo della plancia). L'ordine di risoluzione resta Game Design, Programmazione, Grafica, Audio.
 
 ## Mazzo di Gioco (60 carte)
@@ -96,10 +97,10 @@ Il primo giocatore è scelto a caso.
 
 | Carta | Effetto |
 |---|---|
-| Troppi poligoni! | Grafica torna a 0 |
-| Audio clipping | Audio torna a 0 |
+| Troppi poligoni! | -10 Grafica |
+| Audio clipping | -5 Audio |
 | Patch su patch | Programmazione torna a 0 |
-| Solo un ritocco | Game Design torna a 0 |
+| Solo un ritocco | -7 Game Design |
 | Blackout | Il giocatore successivo gioca una carta a caso senza vederla |
 | Cambio idea | -5 Game Design, -3 Grafica |
 | Build corrotta | -4 in tutte le statistiche |
