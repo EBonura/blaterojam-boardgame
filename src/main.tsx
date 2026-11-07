@@ -13,5 +13,6 @@ startHolo()
 // Read-only hook for the automated room tests (tools/test-rooms.mjs).
 import { roomState, connected, myId, status, dispatch, reconnectNow, netInfo, debugInfo } from './net/session'
 import * as rules from './game/rules'
+import * as pace from './ui/pace'
 import * as cpu from './game/cpu'
-;(window as any).__room = { roomState, connected, myId, status, dispatch, rules, cpu, reconnectNow, netInfo, debugInfo }
+;(window as any).__room = { roomState, connected, myId, status, dispatch, rules, cpu, reconnectNow, netInfo, debugInfo, pace }

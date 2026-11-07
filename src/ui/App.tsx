@@ -26,33 +26,50 @@ function Home() {
 
   return (
     <section class="home">
-      <Credits />
-      <h1 aria-label={t('title')}>
-        {'BLATERO'.split('').map((ch, i) => <span class={`c${(i % 4) + 1}`}>{ch}</span>)}
-        <small>{t('subtitle')}</small>
-      </h1>
-      <label class="field">
-        <span>{t('yourName')}</span>
-        <input value={name} maxLength={16} onInput={(e) => setName(e.currentTarget.value)} autocomplete="nickname" />
-      </label>
-      <button class="primary" disabled={!ok} onClick={() => (remember(), createRoom(name.trim()))}>
-        {t('createRoom')}
-      </button>
-      <div class="join">
-        <input
-          class="code"
-          value={code}
-          maxLength={5}
-          placeholder={t('roomCode')}
-          aria-label={t('roomCode')}
-          autocapitalize="characters"
-          onInput={(e) => setCode(e.currentTarget.value.toUpperCase())}
-        />
-        <button disabled={!ok || code.trim().length < 5} onClick={() => (remember(), enterRoom(code, name.trim()))}>
-          {t('joinRoom')}
+      <div class="home-top">
+        <Credits />
+        <h1 aria-label={t('title')}>
+          {'BLATERO'.split('').map((ch, i) => <span class={`c${(i % 4) + 1}`}>{ch}</span>)}
+          <small>{t('subtitle')}</small>
+        </h1>
+      </div>
+      <HeroCard />
+      <div class="home-form">
+        <input value={name} maxLength={16} placeholder={t('yourName')} aria-label={t('yourName')} onInput={(e) => setName(e.currentTarget.value)} autocomplete="nickname" />
+        <button class="primary" disabled={!ok} onClick={() => (remember(), createRoom(name.trim()))}>
+          {t('createRoom')}
         </button>
+        <div class="join">
+          <input
+            class="code"
+            value={code}
+            maxLength={5}
+            placeholder={t('roomCode')}
+            aria-label={t('roomCode')}
+            autocapitalize="characters"
+            onInput={(e) => setCode(e.currentTarget.value.toUpperCase())}
+          />
+          <button disabled={!ok || code.trim().length < 5} onClick={() => (remember(), enterRoom(code, name.trim()))}>
+            {t('joinRoom')}
+          </button>
+        </div>
       </div>
     </section>
+  )
+}
+
+/** The BLATERO card on its own, art only: it floats, tilts under your finger, and spins when tapped. */
+function HeroCard() {
+  const [spin, setSpin] = useState(0)
+  return (
+    <div class="hero">
+      <div class={`hero-card tilt card f-arcobaleno ${spin ? 'spinning' : ''}`} key={spin} role="img" aria-label="La carta BLATERO"
+        onClick={() => setSpin((n) => n + 1)}>
+        <div class="card-in">
+          <img class="card-art" src="./cards/art/blatero.svg" alt="" draggable={false} />
+        </div>
+      </div>
+    </div>
   )
 }
 

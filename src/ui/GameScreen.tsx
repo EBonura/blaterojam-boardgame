@@ -464,16 +464,19 @@ function Reveal({ g }: { g: GameState }) {
   useEffect(() => {
     if (!cur) return
     const staged = cur.kind === 'imprevisto' && !!cur.hits?.length && !calm()
+    // One timer per step, chained, so each step lasts exactly its own duration.
     const timers: ReturnType<typeof setTimeout>[] = []
-    const at = (ms: number, f: () => void) => timers.push(setTimeout(f, ms))
+    const after = (ms: number, f: () => void) => timers.push(setTimeout(f, ms))
+    const hold = cur.kind === 'imprevisto' ? IMPREVISTO_HOLD_MS : PLAY_HOLD_MS
+    const showCard = () => (setStep('card'), after(hold, next))
     if (staged) {
       setStep('warn')
       breaking.value = { seq: cur.seq, hits: cur.hits!, phase: 'warn' }
-      at(WARN_MS, () => (breaking.value = { seq: cur.seq, hits: cur.hits!, phase: 'break' }))
-      at(WARN_MS + BREAK_MS, () => ((breaking.value = null), setStep('card')))
-    } else setStep('card')
-    const hold = cur.kind === 'imprevisto' ? IMPREVISTO_HOLD_MS : PLAY_HOLD_MS
-    at((staged ? WARN_MS + BREAK_MS : 0) + hold, next)
+      after(WARN_MS, () => {
+        breaking.value = { seq: cur.seq, hits: cur.hits!, phase: 'break' }
+        after(BREAK_MS, () => ((breaking.value = null), showCard()))
+      })
+    } else showCard()
     return () => (timers.forEach(clearTimeout), (breaking.value = null))
   }, [cur?.seq])
   // CPUs wait while something is being shown, and a moment after so the bars can settle.
@@ -488,7 +491,7 @@ function Reveal({ g }: { g: GameState }) {
   return (
     <div class={`reveal ${cur.kind}`} key={cur.seq} onClick={next}>
       {imp && <div class="burst px">IMPREVISTO!</div>}
-      <div class="rv-caption">{describe(cur)}</div>
+      {!imp && <div class="rv-caption">{describe(cur)}</div>}
       <div class="rv-card">
         <Card card={cur.card!} kind={imp ? 'imprevisto' : 'play'} />
       </div>

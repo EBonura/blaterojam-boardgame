@@ -100,6 +100,8 @@ async function playToEnd(d, label, { skip = [], ms = 240000 } = {}) {
     if (s.result !== 'playing') break
     if (s.version !== lastVersion) (lastVersion = s.version), (lastChange = Date.now())
     if (Date.now() - lastChange > 15000) {
+      const dbg = await d.page.evaluate(() => ({ busy: window.__room.pace.revealBusy.value, breaking: window.__room.pace.breaking.value, shown: window.__room.pace.shownSeq.value, reveal: !!document.querySelector('.reveal'), host: window.__room.roomState.value && window.__room.myId.value, last: window.__room.roomState.value?.game?.events.slice(-3) }))
+      console.log('STALL DEBUG', JSON.stringify(dbg))
       check(false, `${label}: table stalled at version ${s.version}, turn of ${s.current}, stats ${JSON.stringify(s.stats)}`)
       return s
     }

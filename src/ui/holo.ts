@@ -1,4 +1,4 @@
-// Holographic Mentor cards: the foil's shine follows the finger or mouse, and the card tilts a little.
+// Holographic Mentor cards and the home-screen card: the shine follows the finger or mouse, and the card tilts.
 let held: HTMLElement | null = null
 
 function release() {
@@ -11,7 +11,7 @@ function release() {
 export function startHolo() {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
   document.addEventListener('pointermove', (e) => {
-    const el = (e.target as HTMLElement | null)?.closest?.('.card.f-argento') as HTMLElement | null
+    const el = (e.target as HTMLElement | null)?.closest?.('.card.f-argento, .tilt') as HTMLElement | null
     if (el !== held) release()
     if (!el) return
     held = el
@@ -21,9 +21,11 @@ export function startHolo() {
     el.classList.add('held')
     el.style.setProperty('--mx', `${x * 100}%`)
     el.style.setProperty('--my', `${y * 100}%`)
-    el.style.setProperty('--rx', `${(x - 0.5) * 16}`)
-    el.style.setProperty('--ry', `${(y - 0.5) * 16}`)
+    const k = el.classList.contains('tilt') ? 36 : 16
+    el.style.setProperty('--rx', `${(x - 0.5) * k}`)
+    el.style.setProperty('--ry', `${(y - 0.5) * k}`)
   })
   document.addEventListener('pointerleave', release)
+  document.addEventListener('pointerup', (e) => e.pointerType !== 'mouse' && release())
   document.addEventListener('pointercancel', release)
 }
