@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test:rooms": "node tools/test-rooms.mjs",
     "cards": "node --experimental-strip-types --no-warnings tools/cards/build.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "zip": "npm run build && rm -f release/blatero-itch.zip && mkdir -p release && cd dist && zip -qr ../release/blatero-itch.zip . && cd .. && ls -l release/blatero-itch.zip"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",

@@ -28,3 +28,6 @@ tools/out
 
 # generated print files (npm run cards)
 print/
+
+# itch.io zip (npm run zip)
+release/

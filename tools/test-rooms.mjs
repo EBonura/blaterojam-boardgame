@@ -8,9 +8,10 @@ import os from 'node:os'
 const CHROME =
   process.env.CHROME ?? `${os.homedir()}/.cache/palermo-drive/chrome-headless-shell-mac-arm64/chrome-headless-shell`
 
-const server = await createServer({ server: { port: 5199, strictPort: true }, logLevel: 'error' })
-await server.listen()
-const URL = 'http://localhost:5199/' + (process.env.Q ?? '')
+// BASE_URL tests an already-served build (see tools/test-zip.mjs); otherwise run the dev server.
+const server = process.env.BASE_URL ? null : await createServer({ server: { port: 5199, strictPort: true }, logLevel: 'error' })
+await server?.listen()
+const URL = (process.env.BASE_URL ?? 'http://localhost:5199/') + (process.env.Q ?? '')
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--mute-audio'] })
 const t0 = Date.now()
@@ -26,6 +27,7 @@ async function device(name) {
   const page = await ctx.newPage()
   page.on('pageerror', (e) => log(`${name} pageerror`, e.message))
   page.on('console', (m) => m.type() === 'error' && log(name, 'console error', m.text().slice(0, 160)))
+  page.on('response', (r) => r.status() >= 400 && log(name, 'HTTP', r.status(), r.url()))
   await page.goto(URL)
   return { name, ctx, page }
 }
@@ -128,7 +130,7 @@ try {
   check(false, e.stack)
 } finally {
   await browser.close()
-  await server.close()
+  await server?.close()
   log(failed ? 'SOME CHECKS FAILED' : 'ALL CHECKS PASSED')
   process.exit(failed ? 1 : 0)
 }
