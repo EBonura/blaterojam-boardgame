@@ -1,7 +1,7 @@
 // Builds card art and print-ready cards from src/cards/cards.json.
 //   public/cards/art/<id>.svg   pixel art used in the game (32x24 grid, or the size an art module exports)
 //   print/<id>.svg              full card, 63x88 mm trim + 3 mm bleed (69x94 mm)
-// Look: KUDA Games' card style (parchment in a wooden frame, dark ink, the card type as a gem in the frame),
+// Look: KUDA Games' card style (parchment, dark ink) in a lacquered frame coloured by card type with a gold edge,
 // with the pixel art set into a dark "screen".
 // Run: npm run cards [-- <id> ...]
 import fs from 'node:fs'
@@ -20,10 +20,13 @@ const SERIF = 'Georgia, serif'
 const AUTHORS = 'BONNIE GAMES · KUDA GAMES'
 const INK = '#3b2616'
 const INK_TONE = { gd: '#b4560a', prog: '#1d5b9b', graf: '#a52a68', audio: '#2e7a2e', neg: '#a3122a', any: '#7a4d00' }
-// Every card has the same wooden frame; its type shows as a gem set into the frame's top-left corner.
-const RAINBOW = ['#a8453a', '#b9803a', '#b9a23f', '#5f8a46', '#3f6f8f', '#6a5a86', '#9a5070']
-const SILVER = ['#8f9095', '#d8d4cc', '#76707e', '#d8d4cc', '#8f9095']
-const SHEET_GEM = { color: '#3f6f8f' }
+// The frame is lacquer in the card type's colour with a gold edge (same as the game).
+// Mentors (foil) are holographic: print them on holographic foil stock, or ask for a foil layer on the frame.
+const LACQUER = { verde: ['#79a55e', '#4e7a3c', '#2f4d22'], rosso: ['#b9493d', '#8e2a22', '#5a1611'], giallo: ['#dcb04f', '#b8862b', '#7a5717'],
+  bianco: ['#f3ead6', '#d9cdb4', '#a59a80'], sheet: ['#5f8fb0', '#3f6f8f', '#284a63'] }
+const RAINBOW = ['#c86a5a', '#c9a052', '#a7b85a', '#5f8a46', '#4f86a8', '#8270a8', '#b06890']
+const HOLO = ['#ff9ad5', '#9ad7ff', '#b9ffcf', '#fff3a0', '#ffb3e6', '#a0c4ff']
+const SHEET_FRAME = { color: '#3f6f8f', sheet: true }
 const gradient = (id, stops) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">${stops.map((c, i, a) => `<stop offset="${i / (a.length - 1)}" stop-color="${c}"/>`).join('')}</linearGradient>`
 
 /** Runs an art module and returns its pixels as SVG rects, plus the grid size. */
@@ -66,15 +69,18 @@ function wrap(text, widthMm, sizeMm, k = 0.55) {
 }
 const tspans = (lines, x, lh) => lines.map((l, i) => `<tspan x="${x}" dy="${i ? lh : 0}">${esc(l)}</tspan>`).join('')
 
-function gemFill(frame) {
-  if (frame.rainbow) return gradient('gem', RAINBOW)
-  if (frame.foil) return gradient('gem', SILVER)
-  return `<linearGradient id="gem"><stop offset="0" stop-color="${frame.color}"/></linearGradient>`
+function frameFill(frame) {
+  if (frame.rainbow) return gradient('frame', RAINBOW)
+  if (frame.foil) return gradient('frame', HOLO)
+  const key = frame.sheet ? 'sheet' : Object.keys(data.frames).find((k) => data.frames[k] === frame)
+  const [l, m, d] = LACQUER[key] ?? [frame.color, frame.color, frame.color]
+  return `<linearGradient id="frame" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="${l}"/><stop offset=".45" stop-color="${m}"/><stop offset="1" stop-color="${d}"/></linearGradient>`
 }
 
 function defs(frame) {
   return `<defs>
-    ${gemFill(frame)}
+    ${frameFill(frame)}
+    <linearGradient id="gloss" x1="0" y1="0" x2=".5" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".25" stop-color="#fff" stop-opacity="0"/></linearGradient>
     <filter id="paper" x="0" y="0" width="100%" height="100%">
       <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="fine"/>
       <feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="3" seed="8" result="blot"/>
@@ -97,19 +103,15 @@ const corner = (x, y, sx, sy) => `<path d="M${x} ${y + sy * 4} V${y} H${x + sx *
 
 function frameAndParchment(frame) {
   return `${defs(frame)}
-  <rect width="69" height="94" fill="#7a4a26" filter="url(#wood)"/>
-  <rect width="69" height="94" fill="#2a1408" opacity=".25"/>
-  <rect x="4.6" y="4.6" width="59.8" height="84.8" rx="2.6" fill="none" stroke="#2a1408" stroke-width="0.9" opacity=".7"/>
+  <rect width="69" height="94" fill="url(#frame)"/>
+  <rect width="69" height="94" fill="url(#gloss)"/>
+  <rect x="3.6" y="3.6" width="61.8" height="86.8" rx="2.4" fill="none" stroke="#e6c25a" stroke-width="0.6"/>
+  <rect x="4.6" y="4.6" width="59.8" height="84.8" rx="2.6" fill="none" stroke="#5a3a08" stroke-width="0.9"/>
   <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="#ead6ac" filter="url(#paper)"/>
   <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="url(#vig)"/>
   <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="none" stroke="${INK}" stroke-width="0.5" opacity=".8"/>
-  ${corner(62, 7, -1, 1)}${corner(7, 87, 1, -1)}${corner(62, 87, -1, -1)}
-  ${gem}`
+  ${corner(7, 7, 1, 1)}${corner(62, 7, -1, 1)}${corner(7, 87, 1, -1)}${corner(62, 87, -1, -1)}`
 }
-
-/** The card type: a gem set into the top-left corner of the frame, in place of that corner's ornament. */
-const gem = `<circle cx="7.6" cy="7.6" r="3" fill="#2a1408"/><circle cx="7.6" cy="7.6" r="2.4" fill="url(#gem)"/>
-  <circle cx="7.6" cy="7.6" r="2.4" fill="none" stroke="#c9962b" stroke-width=".5"/><ellipse cx="6.8" cy="6.8" rx=".9" ry=".55" fill="#fff" opacity=".55"/>`
 
 function title(text) {
   const up = text.toUpperCase()
@@ -197,7 +199,7 @@ function printSheet(sheet, art) {
     return `<text x="11" y="${y}" font-family="${SANS}" font-weight="700" font-size="3.3" fill="${INK_TONE[id]}">${esc(STAT_LABEL[id].toUpperCase())}</text>
   <text x="58" y="${y + 0.4}" text-anchor="end" font-family="${SANS}" font-weight="900" font-size="5" fill="${INK}">${sheet.target[id]}</text>`
   }).join('\n  ')
-  return svg(`${frameAndParchment(SHEET_GEM)}
+  return svg(`${frameAndParchment(SHEET_FRAME)}
   ${title(sheet.title)}
   ${rule(17.5)}
   <text x="34.5" y="21.3" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-size="2.8" fill="${INK}">Scheda videogioco · ${esc(sheet.difficulty)}</text>
