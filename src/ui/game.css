@@ -107,7 +107,7 @@
 .card .card-in { position: absolute; inset: 4.5cqw 4.5cqw 4.5cqw; top: 5cqw; border-radius: 3cqw; display: flex; flex-direction: column; align-items: stretch; overflow: hidden; text-align: center;
   background: radial-gradient(ellipse at center, transparent 55%, rgba(90, 52, 20, .45)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012' numOctaves='3' seed='8'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .28 0 0 0 0 .12 0 0 0 1.1 -.45'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .22 0 0 0 0 .1 0 0 0 .28 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), #ead6ac;
   background-size: 100% 100%, 300px 300px, 160px 160px, auto; box-shadow: inset 0 0 0 .5cqw rgba(59, 38, 22, .8); padding: 0 5cqw; }
-.card-title { hyphens: auto; overflow-wrap: anywhere; font-weight: 700; font-size: 6.4cqw; line-height: 1.05; text-transform: uppercase; color: var(--ink);
+.card-title { hyphens: manual; overflow-wrap: break-word; font-weight: 700; font-size: 6.4cqw; line-height: 1.05; text-transform: uppercase; color: var(--ink);
   min-height: 2.9em; display: flex; align-items: center; justify-content: center; letter-spacing: .03em; padding: 2.5cqw 6cqw 2cqw; }
 .card-title, .card-screen { position: relative; }
 .card-title::after, .card-fx::before { content: ''; position: absolute; left: 0; right: 0; height: .7cqw; background: var(--ink); opacity: .75; }
@@ -275,3 +275,7 @@
 /* Full names on the stage's stat buttons. */
 .stats button { min-width: 0; padding: 6px 10px; font-size: clamp(9px, 2.8vw, 12px); gap: 6px; white-space: nowrap; }
 .stats button b { flex: none; }
+
+/* Long titles (e.g. Animazione frame-by-frame) step down so they fit in two lines. */
+.card-title.long { font-size: 5.2cqw; }
+.card.compact .card-title.long { font-size: 5.8cqw; }

@@ -2,7 +2,7 @@
 
 Una frase divertente per ogni carta. Correggi, cancella o riscrivi direttamente qui: quando sono approvate le metto sulle carte (nel gioco e in stampa), come la frase di PICO-8.
 
-Le Mentor hanno un dialogo, come PICO-8. **Domanda:** le altre tre Mentor (Spaghetti code, Animazione frame-by-frame, Grayboxing) rappresentano persone vere della jam come PICO-8 rappresenta Manny? Se sì, dimmi chi sono e scrivo battute su di loro.
+Le quattro Mentor hanno già la loro frase (scelte il 7 novembre).
 
 ## Mazzo di gioco
 
@@ -33,9 +33,9 @@ Le Mentor hanno un dialogo, come PICO-8. **Domanda:** le altre tre Mentor (Spagh
 | Sprite 3D | È 3D se non lo guardi di lato. |
 | BLATERO | Blatero vede tutto. Anche il commit delle quattro di notte. |
 | PICO-8 (Mentor) | «Voglio fare un open world in 4K» / «Il massimo che posso fare è 16 colori.» *(già sulla carta)* |
-| Spaghetti code (Mentor) | «Non toccare quella riga.» / «Perché?» / «Nessuno lo sa.» |
-| Animazione frame-by-frame (Mentor) | «Quanti frame servono?» / «Ventiquattro al secondo. Ci vediamo a Natale.» |
-| Grayboxing (Mentor) | «E la grafica?» / «Il grigio è un colore.» |
+| Spaghetti code (Mentor) | «Dov’è la funzione che salva?» / «Sì.» *(scelta, sulla carta)* |
+| Animazione frame-by-frame (Mentor) | «Puoi farlo più fluido?» / «Certo: torna tra una settimana.» *(scelta, sulla carta)* |
+| Grayboxing (Mentor) | Ogni livello è un grayboxing che ci ha creduto abbastanza. *(scelta, sulla carta)* |
 
 ## Imprevisti
 

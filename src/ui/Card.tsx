@@ -28,7 +28,7 @@ export function Card({ card, kind = 'play', dim, selected, onClick, compact }: P
       aria-label={`${c.title}: ${c.text}`}
     >
       <div class="card-in">
-        <div class="card-title">{c.title}</div>
+        <div class={`card-title ${c.title.length > 16 ? 'long' : ''}`}>{c.title}</div>
         <div class="card-screen"><img class="card-art" src={`./cards/art/${c.id}.svg`} alt="" draggable={false} /></div>
         <div class={`card-fx rows-${rows?.length ?? 0}`}>
           {rows ? (
