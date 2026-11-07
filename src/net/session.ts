@@ -9,17 +9,38 @@
 // - Your player id is saved per room code, so typing the same code again puts
 //   you back in your seat. On a different device you can take over the seat of
 //   a player who isn't connected.
-import { joinRoom as joinNostr, type Room } from 'trystero'
+import { joinRoom as joinNostr, getRelaySockets as nostrSockets, type Room } from 'trystero'
 import { signal, computed } from '@preact/signals'
 import { reduce, hostOf, newRoom, type Action, type RoomState } from '../room/state'
 import { load, save, deviceId } from '../storage'
 
 const APP_ID = 'blaterojam-boardgame-taranto-2026-v1'
-// Signaling goes through public Nostr relays by default. `?net=mqtt` switches to
-// public MQTT brokers in case the Nostr relays misbehave on the day.
-// The MQTT client is large, so it is only downloaded when asked for.
-const joinRoom =
-  new URLSearchParams(location.search).get('net') === 'mqtt' ? (await import('@trystero-p2p/mqtt')).joinRoom : joinNostr
+
+// How phones find each other: public Nostr relays by default, or public MQTT
+// brokers (switchable in the game, and every device in a room must use the same).
+// The MQTT client is large, so it is only downloaded when chosen.
+export type Net = 'nostr' | 'mqtt'
+const urlNet = new URLSearchParams(location.search).get('net')
+export const net = signal<Net>(urlNet === 'mqtt' || urlNet === 'nostr' ? urlNet : load<Net>('net') ?? 'nostr')
+let mqtt: typeof import('@trystero-p2p/mqtt') | null = null
+
+// Optional TURN relay, for networks where phones can't connect directly (mobile
+// data, Wi-Fi that isolates devices). Set at build time, e.g. from a free
+// Metered.ca app: VITE_TURN_URLS (comma separated), VITE_TURN_USER, VITE_TURN_PASS.
+const env = import.meta.env
+const TURN = env.VITE_TURN_URLS
+  ? [{ urls: String(env.VITE_TURN_URLS).split(','), username: env.VITE_TURN_USER, credential: env.VITE_TURN_PASS }]
+  : undefined
+export const hasTurn = !!TURN
+
+/** What the connection is doing, shown on screen so a stuck join can be diagnosed. */
+export const netInfo = signal({ relays: 0, relaysTotal: 0, peers: 0, error: '' })
+
+export function setNet(n: Net) {
+  net.value = n
+  save('net', n)
+  if (code) connect(code, myName)
+}
 const HEARTBEAT_MS = 4000
 const STALE_MS = 13000
 
@@ -47,6 +68,7 @@ let myName = ''
 const peerToPlayer = new Map<string, string>()
 const lastSeen = new Map<string, number>()
 let heartbeat: ReturnType<typeof setInterval> | undefined
+let diagTimer: ReturnType<typeof setInterval> | undefined
 let sendHello: (h: Hello, target?: string) => void = () => {}
 let sendState: (s: RoomState, target?: string) => void = () => {}
 let sendAct: (e: Envelope) => void = () => {}
@@ -124,7 +146,31 @@ function connect(c: string, name: string) {
   status.value = roomState.value ? 'online' : 'searching'
   refreshConnected()
 
-  room = joinRoom({ appId: APP_ID, password: `blatero-${c}` }, `room-${c}`) as Room
+  netInfo.value = { relays: 0, relaysTotal: 0, peers: 0, error: '' }
+  if (net.value === 'mqtt' && !mqtt) {
+    import('@trystero-p2p/mqtt').then((m) => {
+      mqtt = m
+      if (code === c) connect(c, name)
+    })
+    return
+  }
+  const join = net.value === 'mqtt' ? mqtt!.joinRoom : joinNostr
+  const sockets = net.value === 'mqtt' ? mqtt!.getRelaySockets : nostrSockets
+  const config = { appId: APP_ID, password: `blatero-${c}`, ...(TURN ? { turnConfig: TURN } : {}) }
+  room = join(config, `room-${c}`, {
+    // Peers found each other but WebRTC could not link them: usually a network that needs TURN.
+    onJoinError: (d: { error?: unknown }) => (netInfo.value = { ...netInfo.value, error: String(d.error ?? 'errore') }),
+  }) as Room
+  const diag = () => {
+    const socks = Object.values((sockets?.() ?? {}) as Record<string, { readyState?: number; connected?: boolean }>)
+    netInfo.value = {
+      ...netInfo.value,
+      relays: socks.filter((x) => x.readyState === 1 || x.connected === true).length,
+      relaysTotal: socks.length,
+      peers: Object.keys(room?.getPeers() ?? {}).length,
+    }
+  }
+  diagTimer = setInterval(diag, 1000)
   const hello = room.makeAction<Hello>('hello')
   const state = room.makeAction<RoomState>('state')
   const act = room.makeAction<Envelope>('act')
@@ -202,6 +248,7 @@ function connect(c: string, name: string) {
 
 function teardown() {
   clearInterval(heartbeat)
+  clearInterval(diagTimer)
   room?.leave()
   room = null
   peerToPlayer.clear()

@@ -1,7 +1,7 @@
-import { useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { t } from '../text'
 import { load, save } from '../storage'
-import { roomState, status, connected, hostPresence, myId, amHost, createRoom, enterRoom, leaveRoom, dispatch } from '../net/session'
+import { roomState, status, connected, hostPresence, myId, amHost, createRoom, enterRoom, leaveRoom, dispatch, net, setNet, netInfo, hasTurn } from '../net/session'
 import { hostOf } from '../room/state'
 import { MIN_PLAYERS, MAX_PLAYERS } from '../game/rules'
 import { GameScreen } from './GameScreen'
@@ -52,6 +52,7 @@ function Home() {
           {t('joinRoom')}
         </button>
       </div>
+      <NetStatus />
     </section>
   )
 }
@@ -61,8 +62,44 @@ function Searching() {
     <section class="center">
       <div class="spinner" aria-hidden="true" />
       <p>{t('connecting')}</p>
+      <NetStatus verbose />
       <button onClick={leaveRoom}>{t('leave')}</button>
     </section>
+  )
+}
+
+/** Which signaling network is used, and what the connection is doing. Every device in a room must pick the same network. */
+function NetStatus({ verbose = false }: { verbose?: boolean }) {
+  const i = netInfo.value
+  const [age, setAge] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setAge((a) => a + 1), 1000)
+    return () => clearInterval(t)
+  }, [net.value])
+  let hint = ''
+  if (i.error) hint = 'Un dispositivo è stato trovato ma il collegamento diretto non parte. Succede con i dati mobili o con Wi-Fi che isolano i dispositivi: provate tutti sulla stessa Wi-Fi o su un hotspot.'
+  else if (age > 6 && i.relays === 0) hint = 'Nessun server di collegamento raggiungibile: provate l’altra rete (tutti la stessa).'
+  else if (age > 10 && i.peers === 0) hint = 'Ancora nessun altro dispositivo nella stanza. Controllate il codice e che tutti usino la stessa rete.'
+  return (
+    <div class="netstatus">
+      <div class="ns-row">
+        <span>Rete</span>
+        <div class="seg" role="group" aria-label="Rete">
+          {(['nostr', 'mqtt'] as const).map((n) => (
+            <button class={net.value === n ? 'on' : ''} aria-pressed={net.value === n} onClick={() => (setNet(n), setAge(0))}>
+              {n === 'nostr' ? 'Nostr' : 'MQTT'}
+            </button>
+          ))}
+        </div>
+      </div>
+      {verbose && (
+        <div class="ns-diag">
+          Server di collegamento {i.relays}/{i.relaysTotal} · dispositivi trovati {i.peers}
+          {hasTurn ? ' · relay TURN attivo' : ''}
+        </div>
+      )}
+      {verbose && hint && <p class="ns-hint">{hint}</p>}
+    </div>
   )
 }
 
@@ -136,6 +173,7 @@ function Lobby() {
       ) : (
         <p class="hint">{t('waitingHost')}</p>
       )}
+      <NetStatus verbose />
       <button class="ghost" onClick={leaveRoom}>
         {t('leave')}
       </button>
