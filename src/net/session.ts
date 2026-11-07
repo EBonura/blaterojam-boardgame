@@ -31,7 +31,8 @@ const NOSTR_RELAYS = ['nos.lol', 'nostr.chaima.info', 'nostr.christiansass.de', 
 // data, Wi-Fi that isolates devices). Set at build time, e.g. from a free
 // Metered.ca app: VITE_TURN_URLS (comma separated), VITE_TURN_USER, VITE_TURN_PASS.
 const env = import.meta.env
-const TURN = env.VITE_TURN_URLS
+// All three must be set: a TURN entry with an empty username or password makes the browser refuse every connection.
+const TURN = env.VITE_TURN_URLS && env.VITE_TURN_USER && env.VITE_TURN_PASS
   ? [{ urls: String(env.VITE_TURN_URLS).split(','), username: env.VITE_TURN_USER, credential: env.VITE_TURN_PASS }]
   : undefined
 export const hasTurn = !!TURN

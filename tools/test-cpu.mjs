@@ -44,7 +44,8 @@ const snap = (d) =>
       version: s.version, phase: s.phase, me: r.myId.value, online: r.connected.value.size,
       players: s.players.map((p) => ({ id: p.id, name: p.name, cpu: !!p.cpu })),
       result: g?.result, current: g && r.rules.currentPlayer(g), turn: g?.turn, stats: g?.stats, events: g?.events ?? [],
-      skipButton: !!document.evaluate('//button[contains(., "salta il turno")]', document, null, 9, null).singleNodeValue,
+      // The skip button's own text names the player it skips, so read that rather than pairing the DOM with state (Preact redraws a moment after the state changes).
+      skipButton: document.evaluate('//button[contains(., "salta il turno")]', document, null, 9, null).singleNodeValue?.textContent ?? '',
     }
   })
 
@@ -93,7 +94,7 @@ async function playToEnd(d, label, { skip = [], ms = 240000 } = {}) {
   while (Date.now() < end) {
     s = await snap(d)
     for (const e of s.events) seen.set(e.seq, e)
-    if (cpus.has(s.current) && s.skipButton) skipShown = true
+    if (s.skipButton && s.players.some((p) => p.cpu && s.skipButton.startsWith(p.name + ' '))) skipShown = true
     if (s.result !== 'playing') break
     if (s.version !== lastVersion) (lastVersion = s.version), (lastChange = Date.now())
     if (Date.now() - lastChange > 15000) {
