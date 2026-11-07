@@ -89,6 +89,7 @@ describe('choosing the videogame', () => {
     expect(game.phase).toBe('playing')
     expect(game.game!.sheet).toBe('puzzle-game')
     expect(game.votes).toBeUndefined()
+    expect(game.chosen).toEqual({ sheet: 'puzzle-game', votes: 2, tied: ['puzzle-game'] })
   })
 
   it('draws among the tied sheets, and from all of them when nobody picked any', () => {
@@ -99,6 +100,8 @@ describe('choosing the videogame', () => {
     expect(topVoted(s).sort()).toEqual(['puzzle-game', 'quiz-game'])
     const seen = new Set(Array.from({ length: 40 }, () => run(s, { type: 'tally', id: 'h' }, both)!.game!.sheet))
     expect([...seen].sort()).toEqual(['puzzle-game', 'quiz-game'])
+    expect(run(s, { type: 'tally', id: 'h' }, both)!.chosen).toMatchObject({ votes: 1, tied: ['quiz-game', 'puzzle-game'] })
+    expect(play(room()).chosen).toMatchObject({ votes: 0 })
     expect(topVoted(run(room(), { type: 'start', id: 'h' })!)).toHaveLength(15)
   })
 

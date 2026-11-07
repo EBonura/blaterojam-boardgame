@@ -30,6 +30,12 @@ const strings = {
   voteChange: 'Cambia la scelta',
   voteWaiting: 'Mancano: {names}',
   votes: '{n} voti',
+  introTitle: 'Il team farà…',
+  introVote: '1 voto',
+  introVotes: '{n} voti',
+  introTie: 'Pareggio a {votes} tra {titles}: estratto a sorte',
+  introNoVotes: 'Nessun voto: estratto a sorte',
+  introTap: 'Tocca per iniziare',
   turn: 'Turno {n}',
   endTurn: 'Fine turno',
 }

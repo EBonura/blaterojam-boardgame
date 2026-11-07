@@ -9,7 +9,7 @@ import { roomState, amHost, dispatch } from './session'
 import { isCpu } from '../room/state'
 import { chooseMove } from '../game/cpu'
 import { currentPlayer, isLegal, type Move } from '../game/rules'
-import { revealBusy, CPU_DELAY_MS } from '../ui/pace'
+import { revealBusy, introBusy, CPU_DELAY_MS } from '../ui/pace'
 
 let timer: ReturnType<typeof setTimeout> | undefined
 let plannedFor = -1
@@ -39,8 +39,8 @@ function play(version: number) {
   if (!s || !g || s.version !== version || !amHost.value || g.result !== 'playing') return
   const cpu = currentPlayer(g)
   if (!isCpu(s, cpu)) return
-  // Something is still being shown to the table (a card, an Imprevisto): wait for it.
-  if (revealBusy.value) return void (timer = setTimeout(() => play(version), 300))
+  // Something is still being shown to the table (the chosen game, a card, an Imprevisto): wait for it.
+  if (revealBusy.value || introBusy.value) return void (timer = setTimeout(() => play(version), 300))
   // The host applies its own actions straight away, so a refused move shows up as an
   // unchanged version. That should never happen; if it does, fall back to the
   // simplest legal move rather than leave the table waiting for a CPU.

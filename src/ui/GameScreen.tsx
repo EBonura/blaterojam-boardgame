@@ -1,15 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
-import { breaking, shownSeq, revealBusy, WARN_MS, BREAK_MS, IMPREVISTO_HOLD_MS, PLAY_HOLD_MS, SETTLE_MS } from './pace'
+import { breaking, shownSeq, revealBusy, introBusy, WARN_MS, BREAK_MS, IMPREVISTO_HOLD_MS, PLAY_HOLD_MS, SETTLE_MS, INTRO_MS } from './pace'
 import { roomState, connected, myId, dispatch, leaveRoom } from '../net/session'
 import { t } from '../text'
 import { DISPLAY_ORDER, STAT_SHORT } from '../cards/effects'
 import {
   STAT_NAME, THRESHOLDS, BUFFER_MIN, OVERFLOW, LOSS_OVERFLOWS, JOLLY_MAX,
-  currentPlayer, sheetOf, inBuffer, isLegal, needsStat, playCard, imprevisto, previewPlay,
+  currentPlayer, sheetOf, SHEET_BY_ID, inBuffer, isLegal, needsStat, playCard, imprevisto, previewPlay,
   type GameState, type GameEvent, type Stat, type Move, type Preview,
 } from '../game/rules'
 import { present, isCpu } from '../room/state'
 import { Card, CardBack } from './Card'
+import { SheetFacts } from './Vote'
 import './game.css'
 
 const nameOf = (id: string) => roomState.value?.players.find((p) => p.id === id)?.name ?? '?'
@@ -64,6 +65,7 @@ export function GameScreen() {
       <TurnBar g={g} />
       <Hand g={g} picked={picked?.card ?? null} onPick={setPicked} />
       {picked && <Stage key={picked.card} g={g} picked={picked} onPreview={setPreview} onClose={close} />}
+      <Intro g={g} />
       <Reveal g={g} />
       {g.result !== 'playing' && <EndScreen g={g} />}
     </section>
@@ -439,6 +441,39 @@ function EventLog({ g }: { g: GameState }) {
     <ol class="log">
       {lines.map(([seq, t]) => <li key={seq}>{t}</li>)}
     </ol>
+  )
+}
+
+/** As the game opens: which videogame the table voted for, and how (votes, a tie drawn at random, or no votes). */
+function Intro({ g }: { g: GameState }) {
+  const c = roomState.value!.chosen
+  const [open, setOpen] = useState(() => !!c && c.sheet === g.sheet && g.turn === 0 && !g.events.some((e) => e.kind === 'play'))
+  useEffect(() => {
+    introBusy.value = open
+    if (!open) return
+    const timer = setTimeout(() => setOpen(false), INTRO_MS)
+    return () => clearTimeout(timer)
+  }, [open])
+  useEffect(() => () => void (introBusy.value = false), [])
+  if (!open || !c) return null
+  const sh = sheetOf(g)
+  const titles = c.tied.map((id) => SHEET_BY_ID.get(id)?.title ?? id)
+  const votes = t(c.votes === 1 ? 'introVote' : 'introVotes', { n: c.votes })
+  const why = !c.votes
+    ? t('introNoVotes')
+    : c.tied.length > 1
+      ? t('introTie', { votes, titles: titles.slice(0, -1).join(', ') + ' e ' + titles.at(-1) })
+      : votes
+  return (
+    <div class="reveal intro" onClick={() => setOpen(false)}>
+      <div class="rv-caption">{t('introTitle')}</div>
+      <div class="intro-sheet parch">
+        <div class="intro-title px">{sh.title}</div>
+        <SheetFacts sheet={sh} />
+      </div>
+      <div class="intro-why">{why}</div>
+      <div class="hint">{t('introTap')}</div>
+    </div>
   )
 }
 

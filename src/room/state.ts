@@ -18,6 +18,8 @@ export type RoomState = {
   /** While voting: each person's picks (up to MAX_VOTES game sheet ids), and who has confirmed. CPUs don't vote. */
   votes?: Record<string, string[]>
   ready?: string[]
+  /** How the vote went, shown as the game opens: the top count, and the sheets tied on it (more than one means a draw). */
+  chosen?: { sheet: string; votes: number; tied: string[] }
   game: GameState | null
   /** Ids of recently applied actions, so a resent action is never applied twice. */
   recent?: string[]
@@ -112,11 +114,12 @@ export function reduce(s: RoomState, a: Action, connectedNow: Set<string>): Room
       if (s.phase !== 'voting' || hostOf(s, connectedNow) !== a.id || !voteClosed(s, connectedNow)) return null
       const tied = topVoted(s)
       const sheet = tied[Math.floor(Math.random() * tied.length)]
-      return bump({ phase: 'playing', game: newGame(s.players.map((p) => p.id), undefined, sheet), votes: undefined, ready: undefined })
+      const votes = Math.max(0, ...tally(s).values())
+      return bump({ phase: 'playing', game: newGame(s.players.map((p) => p.id), undefined, sheet), votes: undefined, ready: undefined, chosen: { sheet, votes, tied } })
     }
     case 'restart': {
       if (s.phase !== 'playing' || !seated || seated.cpu || s.game?.result === 'playing') return null
-      return bump({ phase: 'lobby', game: null, votes: undefined, ready: undefined })
+      return bump({ phase: 'lobby', game: null, votes: undefined, ready: undefined, chosen: undefined })
     }
     case 'move': {
       if (s.phase !== 'playing' || !s.game || !seated) return null

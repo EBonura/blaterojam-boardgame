@@ -7,6 +7,8 @@ export const revealBusy = signal(false)
 /** Imprevisti up to this event have been fully shown; later ones still hold the board at their `before`. */
 export const shownSeq = signal(Infinity)
 /** The Imprevisto sequence in progress: which thresholds, and which step. */
+/** The vote's result is on screen as the game opens: CPUs wait for it too. */
+export const introBusy = signal(false)
 export const breaking = signal<{ seq: number; hits: { stat: Stat; t: number }[]; phase: 'warn' | 'break' } | null>(null)
 
 // Durations (ms). tools/browser-env.mjs shortens these exact values in the CPU test.
@@ -16,3 +18,4 @@ export const BREAK_MS = 1050
 export const IMPREVISTO_HOLD_MS = 8000
 export const PLAY_HOLD_MS = 2200
 export const SETTLE_MS = 1100
+export const INTRO_MS = 3800

@@ -327,3 +327,14 @@
 
 /* The move counter turns red in the last five moves of the jam. */
 .counter b.low { background: #f6c4c4; color: #a3122a; border-color: #a3122a; animation: roll .45s ease, blink .8s steps(2) infinite; }
+
+/* the chosen videogame, as the game opens */
+.reveal.intro { background: rgba(8, 12, 30, .96); }
+.intro-sheet { display: grid; justify-items: center; gap: 10px; padding: 18px 26px 20px; min-width: min(78vw, 300px); animation: flip .5s cubic-bezier(.2, 1.2, .4, 1); }
+.intro-title { font-size: clamp(22px, 7vw, 32px); line-height: 1.05; text-align: center; color: #1d2b53; }
+.intro-sheet > .sh-diff, .intro-sheet > .sh-target { grid-area: auto; }
+.intro-sheet > .sh-diff { justify-content: center; }
+.intro-sheet .sh-diff i { width: 10px; height: 10px; }
+.intro-sheet .sh-diff small { font-size: 12px; }
+.intro-sheet .sh-target b { min-width: 30px; font-size: 14px; padding: 3px 5px; }
+.intro-why { color: var(--yellow); font-size: 15px; text-align: center; max-width: 30ch; animation: pop-in .4s .35s both; }

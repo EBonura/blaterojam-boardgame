@@ -3,10 +3,25 @@
 import { useState } from 'preact/hooks'
 import { roomState, connected, myId, dispatch, leaveRoom } from '../net/session'
 import { MAX_VOTES } from '../room/state'
-import { SHEETS, STATS, STAT_NAME } from '../game/rules'
+import { SHEETS, STATS, STAT_NAME, type Sheet } from '../game/rules'
 import { t } from '../text'
 
 const LEVEL: Record<string, number> = { Facile: 1, Medio: 2, Difficile: 3, 'Molto difficile': 4, Estremo: 5 }
+
+/** A game sheet's difficulty (as pips and in words) and its four targets, in the stat colours. */
+export function SheetFacts({ sheet: sh }: { sheet: Sheet }) {
+  return (
+    <>
+      <span class="sh-diff" aria-label={sh.difficulty} title={sh.difficulty}>
+        {[1, 2, 3, 4, 5].map((k) => <i class={k <= LEVEL[sh.difficulty] ? 'lit' : ''} />)}
+        <small>{sh.difficulty}</small>
+      </span>
+      <span class="sh-target" aria-label={STATS.map((st) => `${STAT_NAME[st]} ${sh.target[st]}`).join(', ')}>
+        {STATS.map((st) => <b class={`st-${st}`}>{sh.target[st]}</b>)}
+      </span>
+    </>
+  )
+}
 
 export function Vote() {
   const s = roomState.value!
@@ -44,13 +59,7 @@ export function Vote() {
               <button class={`sheet ${on ? 'on' : ''} ${n ? 'voted' : ''}`} aria-pressed={on} disabled={!voter}
                 onClick={() => toggle(sh.id)}>
                 <span class="sh-title">{sh.title}</span>
-                <span class="sh-diff" aria-label={sh.difficulty} title={sh.difficulty}>
-                  {[1, 2, 3, 4, 5].map((k) => <i class={k <= LEVEL[sh.difficulty] ? 'lit' : ''} />)}
-                  <small>{sh.difficulty}</small>
-                </span>
-                <span class="sh-target" aria-hidden="true">
-                  {STATS.map((st) => <b class={`st-${st}`}>{sh.target[st]}</b>)}
-                </span>
+                <SheetFacts sheet={sh} />
                 <span class="sh-votes" aria-label={t('votes', { n })}>
                   {people.map((p) => picks(p.id).includes(sh.id) && <i title={p.name}>{p.name[0]}</i>)}
                 </span>

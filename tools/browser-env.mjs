@@ -14,7 +14,7 @@ export async function prepare(page, { fastCpu = false } = {}) {
   if (fastCpu)
     await page.evaluateOnNewDocument(() => {
       const native = window.setTimeout
-      const fast = { 1500: 250, 1800: 200, 1050: 150, 8000: 400, 2200: 300, 1100: 150 }
+      const fast = { 1500: 250, 1800: 200, 1050: 150, 8000: 400, 2200: 300, 1100: 150, 3800: 300 }
       window.setTimeout = (fn, ms, ...args) => native(fn, fast[ms] ?? ms, ...args)
     })
 }
