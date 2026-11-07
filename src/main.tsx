@@ -1,10 +1,13 @@
 import { render } from 'preact'
 import { App } from './ui/App'
 import './style.css'
+import { startCpuDriver } from './net/cpuDriver'
 
+startCpuDriver()
 render(<App />, document.getElementById('app')!)
 
 // Read-only hook for the automated room tests (tools/test-rooms.mjs).
 import { roomState, connected, myId, status, dispatch, reconnectNow, netInfo, debugInfo } from './net/session'
 import * as rules from './game/rules'
-;(window as any).__room = { roomState, connected, myId, status, dispatch, rules, reconnectNow, netInfo, debugInfo }
+import * as cpu from './game/cpu'
+;(window as any).__room = { roomState, connected, myId, status, dispatch, rules, cpu, reconnectNow, netInfo, debugInfo }

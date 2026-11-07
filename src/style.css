@@ -76,6 +76,9 @@ h2 { margin: 6px 0 0; font-size: 18px; color: var(--light); }
 .players li.away .pname { opacity: .5; }
 .players .pname { flex: 1; font-weight: 800; }
 .players em { font-style: italic; font-family: Georgia, serif; font-size: 13px; color: var(--ink-soft); }
+.players li.cpu .dot { background: var(--gold-dark); box-shadow: 0 0 0 2px rgba(138, 90, 16, .3); }
+.cpu-tag { font-size: 11px; font-weight: 900; letter-spacing: .14em; color: var(--paper); background: var(--ink); padding: 2px 7px; border-radius: 4px; }
+.players .cpu-remove { min-height: 34px; padding: 4px 11px; font-size: 14px; margin-left: 2px; }
 
 .claim { display: flex; flex-direction: column; gap: 8px; }
 .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }

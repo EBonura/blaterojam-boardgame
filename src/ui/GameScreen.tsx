@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'preact/hooks'
 import { roomState, connected, myId, dispatch, leaveRoom } from '../net/session'
+import { t } from '../text'
 import { DISPLAY_ORDER, STAT_LABEL, STAT_SHORT } from '../cards/effects'
 import {
   STAT_NAME, THRESHOLDS, BUFFER_MIN, OVERFLOW, LOSS_OVERFLOWS, JOLLY_MAX,
   currentPlayer, sheetOf, inBuffer, isLegal, needsStat, playCard, imprevisto,
   type GameState, type GameEvent, type Stat, type Move,
 } from '../game/rules'
+import { present, isCpu } from '../room/state'
 import { Card, CardBack } from './Card'
 import './game.css'
 
 const nameOf = (id: string) => roomState.value?.players.find((p) => p.id === id)?.name ?? '?'
 const send = (move: Move) => dispatch({ type: 'move', id: myId.value, move })
+/** Connected devices plus the CPU seats, which are always at the table. */
+const here = () => present(roomState.value!, connected.value)
+const cpu = (id: string) => isCpu(roomState.value!, id)
 
 export function GameScreen() {
   const g = roomState.value!.game!
@@ -35,8 +40,9 @@ function Players({ g }: { g: GameState }) {
     <div class="pstrip">
       <span class="ps-code">{s.code}</span>
       {g.order.map((id) => (
-        <span class={`ps ${id === turn ? 'turn' : ''} ${connected.value.has(id) ? '' : 'away'} ${id === myId.value ? 'me' : ''}`}>
+        <span class={`ps ${id === turn ? 'turn' : ''} ${here().has(id) ? '' : 'away'} ${id === myId.value ? 'me' : ''}`}>
           {nameOf(id)}
+          {cpu(id) && <i class="ps-cpu">CPU</i>}
         </span>
       ))}
     </div>
@@ -166,7 +172,7 @@ function Board({ g }: { g: GameState }) {
 function TurnBar({ g }: { g: GameState }) {
   const who = currentPlayer(g)
   const mine = who === myId.value
-  const away = !connected.value.has(who)
+  const away = !here().has(who)
   const notes: string[] = []
   if (inBuffer(g)) notes.push('Buffer attivo: solo carte Base')
   if (g.blind) notes.push('Blackout: carta a caso, coperta')
@@ -174,6 +180,7 @@ function TurnBar({ g }: { g: GameState }) {
   return (
     <div class={`turnbar ${mine ? 'mine' : ''}`}>
       <div class="tb-who">{mine ? 'Tocca a te!' : `Tocca a ${nameOf(who)}`}</div>
+      {cpu(who) && g.result === 'playing' && <div class="tb-note">{t('cpuThinking', { name: nameOf(who) })}</div>}
       {notes.map((n) => <div class="tb-note">{n}</div>)}
       {away && !mine && g.result === 'playing' && (
         <button class="ghost" onClick={() => send({ type: 'skipAbsent' })}>

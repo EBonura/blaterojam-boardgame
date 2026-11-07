@@ -21,6 +21,7 @@ There's no game server. Players meet through public signaling relays (Nostr, via
 npm install
 npm run dev
 npm run test:rooms   # 3 simulated phones over the real relays: join, start, host drop, rejoin, seat takeover
+npm run test:cpu     # 1 phone + 3 CPUs to the end of a game; 2 phones + 2 CPUs where the host drops and the other phone takes over the CPUs
 npm run build        # builds dist/
 npm run zip          # release/blatero-itch.zip, ready to upload to itch.io
 node tools/test-zip.mjs  # serves the zip from a nested path like itch.io and runs the room test on it
@@ -28,6 +29,8 @@ butler push release/blatero-itch.zip bonnie-studios/blatero:html5   # publish to
 ```
 
 The rules live in `src/game/rules.ts` as a pure `(state, move) => state` function, tested in `src/game/rules.test.ts` (`npm test`). Card data is `src/cards/cards.json`; card art is pixel art written as code in `tools/cards/art/` (see `tools/cards/ART-BRIEF.md`), and `npm run cards` builds the game art and print-ready SVGs (63x88 mm with 3 mm bleed) into `print/`. Room and network code are in `src/room` and `src/net`.
+
+CPU players: the host can add them in the lobby ("Aggiungi CPU") to fill a table of 4 to 6. They are seats in the room state (`Player.cpu`), never host and never counted as disconnected. Whichever phone is host plays their turns after a short pause (`src/net/cpuDriver.ts`, `?cpuDelay=ms` to change it) using the strategy in `src/game/cpu.ts`.
 
 ## Credits
 

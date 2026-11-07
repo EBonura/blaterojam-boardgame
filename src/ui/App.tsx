@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { t } from '../text'
 import { load, save } from '../storage'
 import { roomState, status, connected, hostPresence, myId, amHost, createRoom, enterRoom, leaveRoom, dispatch, net, setNet, netInfo, hasTurn } from '../net/session'
-import { hostOf } from '../room/state'
+import { hostOf, present } from '../room/state'
 import { MIN_PLAYERS, MAX_PLAYERS } from '../game/rules'
 import { GameScreen } from './GameScreen'
 import { KudaBadge } from './KudaBadge'
@@ -107,17 +107,25 @@ function NetStatus({ verbose = false }: { verbose?: boolean }) {
 function PlayerList() {
   const s = roomState.value!
   const host = hostOf(s, connected.value)
+  const here = present(s, connected.value)
   return (
     <ul class="players">
       {[...s.players].sort((a, b) => a.seat - b.seat).map((p) => {
-        const online = connected.value.has(p.id)
+        const online = here.has(p.id)
         return (
-          <li class={`parch ${online ? '' : 'away'}`}>
+          <li class={`parch ${online ? '' : 'away'} ${p.cpu ? 'cpu' : ''}`}>
             <span class="dot" />
             <span class="pname">{p.name}</span>
+            {p.cpu && <span class="cpu-tag">{t('cpu')}</span>}
             {p.id === myId.value && <em>{t('you')}</em>}
             {p.id === host && <em>{t('host')}</em>}
             {!online && <em>{t('offline')}</em>}
+            {p.cpu && amHost.value && s.phase === 'lobby' && (
+              <button class="cpu-remove" aria-label={t('removeCpu', { name: p.name })} title={t('removeCpu', { name: p.name })}
+                onClick={() => dispatch({ type: 'removeCpu', id: myId.value, cpu: p.id })}>
+                ✕
+              </button>
+            )}
           </li>
         )
       })}
@@ -140,7 +148,7 @@ function ClaimSeat() {
   const s = roomState.value!
   // Only offer seats the host sees as empty; until we hear from the host, offer none.
   const online = hostPresence.value
-  const free = online ? s.players.filter((p) => !online.has(p.id)) : []
+  const free = online ? s.players.filter((p) => !p.cpu && !online.has(p.id)) : []
   return (
     <div class="claim">
       <p>{t('roomFull')}</p>
@@ -166,6 +174,11 @@ function Lobby() {
       {!seated && <ClaimSeat />}
       {amHost.value ? (
         <>
+          {s.players.length < MAX_PLAYERS && (
+            <button class="add-cpu" onClick={() => dispatch({ type: 'addCpu', id: myId.value })}>
+              {t('addCpu')}
+            </button>
+          )}
           <button class="primary" disabled={!enough} onClick={() => dispatch({ type: 'start', id: myId.value })}>
             {t('start')}
           </button>
