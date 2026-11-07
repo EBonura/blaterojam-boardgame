@@ -25,3 +25,6 @@ dist-ssr
 
 # test output
 tools/out
+
+# generated print files (npm run cards)
+print/

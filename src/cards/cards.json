@@ -1,0 +1,27 @@
+{
+  "_note": "SAMPLE cards to settle the look. Replace with KUDA's real cards once the photos are transcribed.",
+  "kinds": {
+    "risorsa": { "color": "#ffa300", "label": { "it": "Risorsa", "en": "Resource" } },
+    "evento": { "color": "#ff004d", "label": { "it": "Evento", "en": "Event" } }
+  },
+  "cards": [
+    {
+      "id": "caffe",
+      "kind": "risorsa",
+      "title": { "it": "Caffè", "en": "Coffee" },
+      "text": {
+        "it": "Testo di esempio. Il vero testo arriva dalle carte di KUDA Games.",
+        "en": "Sample text. The real text comes from KUDA Games' cards."
+      }
+    },
+    {
+      "id": "bug",
+      "kind": "evento",
+      "title": { "it": "Bug in produzione", "en": "Bug in production" },
+      "text": {
+        "it": "Testo di esempio. Il vero testo arriva dalle carte di KUDA Games.",
+        "en": "Sample text. The real text comes from KUDA Games' cards."
+      }
+    }
+  ]
+}

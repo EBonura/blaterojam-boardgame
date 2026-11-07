@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "node tools/cards/build.mjs && tsc && vite build",
     "preview": "vite preview",
-    "test:rooms": "node tools/test-rooms.mjs"
+    "test:rooms": "node tools/test-rooms.mjs",
+    "cards": "node tools/cards/build.mjs"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",
