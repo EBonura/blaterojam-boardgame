@@ -35,7 +35,7 @@ export function Card({ card, kind = 'play', dim, selected, onClick, compact }: P
             rows.map((r) => (
               <div class={`fx t-${r.tone}`}>
                 <span class="fx-num">{r.num}</span>
-                <span class="fx-label">{compact ? r.short : r.label}</span>
+                <span class="fx-label">{compact || rows.length > 1 ? r.short : r.label}</span>
               </div>
             ))
           ) : (

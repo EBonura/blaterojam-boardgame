@@ -231,3 +231,10 @@
 .verdict { font-size: 13px; font-weight: 800; padding: 6px 10px; border-radius: 8px; animation: pop-in .25s ease; }
 .verdict.win { background: var(--mint); color: #000; }
 .verdict.warn { background: var(--pink); color: #000; }
+
+/* Two or more effects: one tidy table, numbers right-aligned, short labels left-aligned on one line. */
+.card-fx:not(.rows-0):not(.rows-1) { display: grid; grid-template-columns: auto auto; justify-content: center; align-content: center; column-gap: 2.5cqw; row-gap: .8cqw; }
+.card-fx:not(.rows-0):not(.rows-1) .fx { display: contents; }
+.card-fx:not(.rows-0):not(.rows-1) .fx-num { text-align: right; }
+.card-fx:not(.rows-0):not(.rows-1) .fx-label { text-align: left; white-space: nowrap; max-width: none; align-self: center; }
+.card-fx:not(.rows-0):not(.rows-1) .card-quote { grid-column: 1 / -1; }
