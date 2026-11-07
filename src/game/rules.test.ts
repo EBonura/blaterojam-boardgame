@@ -71,11 +71,21 @@ describe('buffer', () => {
 
   it('redraws once automatically, then passes, when the hand has no Base card', () => {
     const special = ['brainstorming#1', 'brainstorming#2', 'brainstorming#3', 'brainstorming#4', 'brainstorming#5', '60-fps#1', 'engine-2d#1', 'sprite-3d#1']
-    const g = game({ stats: { gd: 16, prog: 0, graf: 0, audio: 0 }, hand: ['caffe#1'], deck: special, discard: [] })
-    const n = play(g, { type: 'play', card: 'caffe#1', stat: 'audio' })!
+    const g = game({ stats: { gd: 16, prog: 0, graf: 0, audio: 0 }, hand: [], deck: special, discard: [] })
+    // 'a' isn't connected, so their turn is skipped and 'b' draws from a deck with no Base card.
+    const n = applyMove(g, { type: 'skipAbsent' }, 'b', new Set(['b', 'c', 'd']))!
     const k = after(g, n).map((e) => e.kind)
     expect(k).toContain('redraw')
     expect(k).toContain('pass')
+  })
+
+  it('shuffles the discards back in when the deck has no Base card left', () => {
+    const special = ['brainstorming#1', 'brainstorming#2', 'brainstorming#3', 'brainstorming#4', 'brainstorming#5', '60-fps#1', 'engine-2d#1', 'sprite-3d#1']
+    const g = game({ stats: { gd: 16, prog: 0, graf: 0, audio: 0 }, hand: ['caffe#1'], deck: special, discard: ['zip#1', 'pico-8#1'] })
+    const n = play(g, { type: 'play', card: 'caffe#1', stat: 'audio' })!
+    expect(after(g, n).map((e) => e.kind)).toContain('redraw')
+    expect(n.discard).toEqual([])
+    expect([...n.deck, ...n.hand].sort()).toEqual([...special, 'caffe#1', 'zip#1', 'pico-8#1'].sort())
   })
 })
 
