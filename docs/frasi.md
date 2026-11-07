@@ -1,6 +1,6 @@
-# Frasi delle carte (bozza da rivedere)
+# Frasi delle carte (decise il 7 novembre)
 
-Una frase divertente per ogni carta. Correggi, cancella o riscrivi direttamente qui: quando sono approvate le metto sulle carte (nel gioco e in stampa), come la frase di PICO-8.
+Una frase divertente per ogni carta, tutte approvate. Vanno sulle carte (nel gioco e in stampa), come la frase di PICO-8.
 
 Le quattro Mentor hanno già la loro frase (scelte il 7 novembre).
 
