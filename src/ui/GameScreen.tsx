@@ -46,7 +46,7 @@ function Players({ g }: { g: GameState }) {
 function SheetBar({ g }: { g: GameState }) {
   const sh = sheetOf(g)
   return (
-    <div class="sheetbar">
+    <div class="sheetbar parch">
       <div class="sb-top">
         <img src={`./cards/art/${sh.id}.svg`} alt="" />
         <div class="sb-name">
@@ -70,45 +70,94 @@ function SheetBar({ g }: { g: GameState }) {
   )
 }
 
-const pct = (v: number) => `${(v / OVERFLOW) * 100}%`
+// Board geometry (SVG user units): four columns 85 wide, value 0 at the top, 20 at the bottom.
+const COL_W = 85
+const Y0 = 22
+const UNIT = 12.4
+const yOf = (v: number) => Y0 + v * UNIT
+const INK_TONE: Record<string, string> = { gd: '#b4560a', prog: '#1d5b9b', graf: '#a52a68', audio: '#2e7a2e' }
 
-/** KUDA's board: four vertical sliders, 0 at the top, Overflow (20) at the bottom. */
+/** KUDA's board: four carved tracks on parchment, a gold ring that slides down, Overflow (20) at the bottom. */
 function Board({ g }: { g: GameState }) {
   const target = sheetOf(g).target
+  const H = yOf(OVERFLOW) + 16
   return (
-    <div class="board">
+    <div class="board parch">
       <div class="cols">
-        {DISPLAY_ORDER.map((st) => {
+        {DISPLAY_ORDER.map((st) => (
+          <div class={`col t-${st} ${g.stats[st] === target[st] ? 'ok' : ''}`}>
+            <div class="col-name">{st === 'prog' ? 'Program\u00ADmazione' : STAT_LABEL[st]}</div>
+            <div class="col-val">{g.stats[st]}</div>
+          </div>
+        ))}
+      </div>
+      <svg class="tracks" viewBox={`0 0 ${COL_W * 4} ${H}`} role="img"
+        aria-label={DISPLAY_ORDER.map((st) => `${STAT_LABEL[st]} ${g.stats[st]} su ${target[st]}`).join(', ')}>
+        <defs>
+          <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fff2b0" /><stop offset=".45" stop-color="#d9a426" /><stop offset=".7" stop-color="#8a5a10" /><stop offset="1" stop-color="#f3cf63" />
+          </linearGradient>
+          <pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="5" height="5" fill="#c98a2a" /><rect width="2.2" height="5" fill="#8f2a12" />
+          </pattern>
+        </defs>
+        {DISPLAY_ORDER.map((st, i) => {
+          const cx = COL_W * i + COL_W / 2
           const v = g.stats[st]
+          const t = target[st]
+          const len = yOf(OVERFLOW) - Y0
           return (
-            <div class={`col t-${st} ${v === target[st] ? 'ok' : ''}`}>
-              <div class="col-name">{st === 'prog' ? 'Program\u00ADmazione' : STAT_LABEL[st]}</div>
-              <div class="col-val">{v}</div>
-              <div class="vtrack" role="img" aria-label={`${STAT_LABEL[st]} ${v}, obiettivo ${target[st]}`}>
-                <div class="vt-buffer" style={{ top: pct(BUFFER_MIN), height: `calc(${pct(OVERFLOW - BUFFER_MIN)} - 2px)` }} />
-                <div class="vt-spine" />
-                <div class="vt-fill" style={{ height: pct(v) }} />
-                {[...THRESHOLDS, 15].map((t) => (
-                  <div class={`vt-tick ${t === 15 ? 'free' : ''}`} style={{ top: pct(t) }}>
-                    <span>{t}</span>
-                  </div>
-                ))}
-                <div class="vt-target" style={{ top: pct(target[st]) }} title={`Obiettivo ${target[st]}`} />
-                <div class="vt-of" />
-                <svg class="vt-ring" style={{ top: pct(v) }} viewBox="0 0 40 20" aria-hidden="true">
-                  <ellipse cx="20" cy="10" rx="17" ry="7" />
-                </svg>
-              </div>
-              {g.overflowed.includes(st) && <div class="col-of">OVERFLOW</div>}
-            </div>
+            <g class={`trk t-${st}`}>
+              {/* carved groove */}
+              <rect x={cx - 8} y={Y0 - 9} width="16" height={len + 18} rx="8" fill="#7a5530" />
+              <rect x={cx - 6} y={Y0 - 7} width="12" height={len + 14} rx="6" fill="#3d2714" />
+              <rect x={cx + 3} y={Y0 - 4} width="1.5" height={len + 8} rx=".75" fill="#9b7448" opacity=".6" />
+              {/* buffer 16-19 */}
+              <rect x={cx - 6} y={yOf(BUFFER_MIN) - UNIT / 2} width="12" height={UNIT * 4} fill="url(#hatch)" opacity=".9" />
+              {/* progress in the stat's ink */}
+              <rect class="trk-fill" x={cx - 3.5} y={Y0} width="7" height={len} rx="3.5" fill={INK_TONE[st]}
+                style={{ transform: `scaleY(${v / OVERFLOW})` }} />
+              {/* minor ticks */}
+              {Array.from({ length: OVERFLOW - 1 }, (_, k) => k + 1).map((k) => (
+                <line x1={cx + 10} x2={cx + (k % 5 === 0 ? 16 : 13)} y1={yOf(k)} y2={yOf(k)} stroke="#3b2616" stroke-width="1" opacity=".45" />
+              ))}
+              {/* Imprevisto thresholds */}
+              {THRESHOLDS.map((k) => (
+                <g>
+                  <rect x={cx - 15} y={yOf(k) - 3} width="6" height="6" transform={`rotate(45 ${cx - 12} ${yOf(k)})`} fill="#a3122a" />
+                  <text x={cx - 18} y={yOf(k) + 3.5} class="trk-n red" text-anchor="end">{k}</text>
+                </g>
+              ))}
+              {/* end of free memory */}
+              <rect x={cx - 14} y={yOf(15) - 1.5} width="28" height="3" rx="1.5" fill="#3b2616" />
+              <text x={cx - 17} y={yOf(15) + 4} class="trk-n bold" text-anchor="end">15</text>
+              {/* target flag */}
+              <g class="trk-target">
+                <rect x={cx - 8} y={yOf(t) - 1} width="16" height="2" fill="url(#gold)" />
+                <line x1={cx + 9} x2={cx + 9} y1={yOf(t) - 13} y2={yOf(t) + 1} stroke="#3b2616" stroke-width="1.6" />
+                <path d={`M${cx + 9.8} ${yOf(t) - 13} H${cx + 32} L${cx + 28} ${yOf(t) - 7.5} L${cx + 32} ${yOf(t) - 2} H${cx + 9.8} Z`} fill="url(#gold)" stroke="#6b4a10" stroke-width=".8" />
+                <text x={cx + 19.5} y={yOf(t) - 4.2} class="trk-flag" text-anchor="middle">{t}</text>
+              </g>
+              {/* overflow seal */}
+              <g class={`seal ${g.overflowed.includes(st) ? 'used' : ''}`}>
+                <circle cx={cx} cy={yOf(OVERFLOW)} r="10.5" fill="#7d1010" />
+                <circle cx={cx} cy={yOf(OVERFLOW)} r="8" fill="#a3161a" stroke="#d64a3a" stroke-width=".8" stroke-dasharray="2 1.4" />
+                <text x={cx} y={yOf(OVERFLOW) + 3.4} class="seal-n" text-anchor="middle">20</text>
+              </g>
+              {/* the ring (anello) */}
+              <g class="ring" style={{ transform: `translate(${cx}px, ${yOf(v)}px)` }}>
+                <ellipse cx="0" cy="2.2" rx="15" ry="6.2" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="4" />
+                <ellipse cx="0" cy="0" rx="15" ry="6.2" fill="none" stroke="url(#gold)" stroke-width="4" />
+                <ellipse cx="0" cy="0" rx="15" ry="6.2" fill="none" stroke="#5a3a08" stroke-width=".6" />
+              </g>
+            </g>
           )
         })}
-      </div>
+      </svg>
       <div class="board-foot">
-        <span>OVERFLOW (20)</span>
-        <span>
-          {g.overflowed.length}/{LOSS_OVERFLOWS}
-        </span>
+        <span>Overflow</span>
+        {Array.from({ length: LOSS_OVERFLOWS }, (_, i) => <i class={`mini-seal ${i < g.overflowed.length ? 'used' : ''}`} />)}
+        <span class="bf-hint">a {LOSS_OVERFLOWS} si perde</span>
       </div>
     </div>
   )
@@ -180,7 +229,7 @@ function Hand({ g }: { g: GameState }) {
         </button>
       )}
       {card && (
-        <div class="choose">
+        <div class="choose parch">
           <div class="choose-card"><Card card={sel!} /></div>
           {needsStat(sel!) && (
             <>

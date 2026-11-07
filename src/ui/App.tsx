@@ -74,7 +74,7 @@ function PlayerList() {
       {[...s.players].sort((a, b) => a.seat - b.seat).map((p) => {
         const online = connected.value.has(p.id)
         return (
-          <li class={online ? '' : 'away'}>
+          <li class={`parch ${online ? '' : 'away'}`}>
             <span class="dot" />
             <span class="pname">{p.name}</span>
             {p.id === myId.value && <em>{t('you')}</em>}
@@ -90,7 +90,7 @@ function PlayerList() {
 function RoomCode() {
   const s = roomState.value!
   return (
-    <div class="roomcode">
+    <div class="roomcode parch">
       <span>{t('roomCode')}</span>
       <strong>{s.code}</strong>
     </div>
