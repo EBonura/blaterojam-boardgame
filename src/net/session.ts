@@ -23,6 +23,9 @@ export type Net = 'nostr' | 'mqtt'
 const urlNet = new URLSearchParams(location.search).get('net')
 export const net = signal<Net>(urlNet === 'mqtt' || urlNet === 'nostr' ? urlNet : load<Net>('net') ?? 'nostr')
 let mqtt: typeof import('@trystero-p2p/mqtt') | null = null
+// Nostr relays measured as reliable for Palermo Drive (palermo-drive/src/p2p/relays.js),
+// instead of Trystero picking from 29 volunteer relays, some of which rate-limit or go quiet.
+const NOSTR_RELAYS = ['nos.lol', 'nostr.chaima.info', 'nostr.christiansass.de', 'nostr.stakey.net', 'relay.bitmacro.cloud'].map((h) => 'wss://' + h)
 
 // Optional TURN relay, for networks where phones can't connect directly (mobile
 // data, Wi-Fi that isolates devices). Set at build time, e.g. from a free
@@ -190,7 +193,12 @@ function connect(c: string, name: string) {
 function openRoom(c: string) {
   const join = net.value === 'mqtt' ? mqtt!.joinRoom : joinNostr
   const sockets = net.value === 'mqtt' ? mqtt!.getRelaySockets : nostrSockets
-  const config = { appId: APP_ID, password: `blatero-${c}`, ...(TURN ? { turnConfig: TURN } : {}) }
+  const config = {
+    appId: APP_ID,
+    password: `blatero-${c}`,
+    ...(net.value === 'nostr' ? { relayConfig: { urls: NOSTR_RELAYS } } : {}),
+    ...(TURN ? { turnConfig: TURN } : {}),
+  }
   room = join(config, `room-${c}`, {
     // Peers found each other but WebRTC could not link them: usually a network that needs TURN.
     onJoinError: (d: { error?: unknown }) => (netInfo.value = { ...netInfo.value, error: String(d.error ?? 'errore') }),

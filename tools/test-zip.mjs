@@ -1,5 +1,5 @@
 // Serves release/blatero-itch.zip from a nested path, the way itch.io does, and runs the room test against it.
-// Run: npm run zip && node tools/test-zip.mjs
+// Run: npm run zip && node tools/test-zip.mjs [tools/test-rooms.mjs | tools/test-rejoin.mjs]
 import http from 'node:http'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -18,6 +18,6 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { 'content-type': types[path.extname(f)] ?? 'application/octet-stream' }).end(fs.readFileSync(f))
 })
 server.listen(5195, () => {
-  const t = spawn('node', ['tools/test-rooms.mjs'], { stdio: 'inherit', env: { ...process.env, BASE_URL: `http://localhost:5195${PREFIX}` } })
+  const t = spawn('node', [process.argv[2] ?? 'tools/test-rooms.mjs'], { stdio: 'inherit', env: { ...process.env, BASE_URL: `http://localhost:5195${PREFIX}` } })
   t.on('exit', (code) => (server.close(), fs.rmSync(dir, { recursive: true }), process.exit(code ?? 1)))
 })

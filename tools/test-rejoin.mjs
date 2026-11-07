@@ -6,9 +6,10 @@ import puppeteer from 'puppeteer-core'
 import os from 'node:os'
 
 const CHROME = process.env.CHROME ?? `${os.homedir()}/.cache/palermo-drive/chrome-headless-shell-mac-arm64/chrome-headless-shell`
-const server = await createServer({ server: { port: 5193, strictPort: true }, logLevel: 'error' })
-await server.listen()
-const URL = 'http://localhost:5193/' + (process.env.Q ?? '')
+// BASE_URL tests a built copy (tools/test-zip.mjs): the dev server reloads a page that was frozen, which hides the real behaviour.
+const server = process.env.BASE_URL ? null : await createServer({ server: { port: 5193, strictPort: true }, logLevel: 'error' })
+await server?.listen()
+const URL = (process.env.BASE_URL ?? 'http://localhost:5193/') + (process.env.Q ?? '')
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--mute-audio'] })
 const t0 = Date.now()
 const log = (...a) => console.log(`[${((Date.now() - t0) / 1000).toFixed(1)}s]`, ...a)
@@ -84,7 +85,7 @@ try {
 } catch (e) {
   check(false, e.stack)
 } finally {
-  await browser.close(); await server.close()
+  await browser.close(); await server?.close()
   log(failed ? 'SOME CHECKS FAILED' : 'ALL CHECKS PASSED')
   process.exit(failed ? 1 : 0)
 }
