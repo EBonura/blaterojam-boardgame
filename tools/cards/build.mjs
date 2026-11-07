@@ -136,19 +136,26 @@ function artScreen(art, y, h) {
 
 const footer = `<text x="34.5" y="87.4" text-anchor="middle" font-family="${SANS}" font-size="1.5" letter-spacing="0.2" fill="${INK}" opacity=".75">${AUTHORS}</text>`
 
+/** The funny line under the effect (and under a game sheet's picture): size and line height in mm. */
+const QUOTE = 2.2, QUOTE_LH = 2.9
+const quoteLines = (q) => (q ? q.flatMap((l) => wrap(l, 54, QUOTE, 0.72)) : [])
+const quoteText = (lines, y) => `<text x="34.5" y="${y}" text-anchor="middle" font-family="${SERIF}" font-size="${QUOTE}" fill="${INK}">${tspans(lines, 34.5, QUOTE_LH)}</text>`
+
 /** The effect box: big numbers in dark inks. */
 function effect(card, top, bottom) {
   const rows = effectRows(card.effect)
   const h = bottom - top
-  if (!rows) {
-    const lines = wrap(card.text, 46, 3.6)
-    const y = top + h / 2 - ((lines.length - 1) * 4.5) / 2 + 1.3
-    return `<text x="34.5" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="400" font-size="3.6" fill="${INK}">${tspans(lines, 34.5, 4.5)}</text>`
-  }
-  const quote = card.quote ? card.quote.flatMap((l) => wrap(l, 54, 1.6, 0.72)) : []
-  const space = h - (quote.length ? quote.length * 3 + 1 : 0)
+  const quote = quoteLines(card.quote)
+  const space = h - (quote.length ? quote.length * QUOTE_LH + 1.4 : 0)
   let out = ''
-  if (rows.length === 1) {
+  if (!rows) {
+    // Words instead of numbers: the largest size whose lines fit above the funny line.
+    let size = 3.6, lines = wrap(card.text, 46, size)
+    while (size > 2.6 && lines.length * size * 1.25 > space - 1.5) (size -= 0.2), (lines = wrap(card.text, 50, size))
+    const lh = size * 1.25
+    const y = top + space / 2 - ((lines.length - 1) * lh) / 2 + size * 0.36
+    out += `<text x="34.5" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="400" font-size="${size.toFixed(1)}" fill="${INK}">${tspans(lines, 34.5, lh)}</text>`
+  } else if (rows.length === 1) {
     const r = rows[0], fill = INK_TONE[r.tone]
     const big = Math.min(14, space * 0.55)
     const label = wrap(r.label.toUpperCase(), 48, 2.6, 0.82)
@@ -179,7 +186,7 @@ function effect(card, top, bottom) {
       out += `<text x="32" y="${cy - num * 0.36 + ls * 0.36}" font-family="${SANS}" font-weight="700" font-size="${ls}" fill="${fill}">${esc(r.label.toUpperCase())}</text>`
     })
   }
-  if (quote.length) out += `<text x="34.5" y="${top + space + 1.8}" text-anchor="middle" font-family="${SERIF}" font-size="1.6" fill="${INK}">${tspans(quote, 34.5, 2.3)}</text>`
+  if (quote.length) out += quoteText(quote, top + space + QUOTE)
   return out
 }
 
@@ -201,6 +208,7 @@ function printCard(card, frame, art) {
 }
 
 function printSheet(sheet, art) {
+  const quote = quoteLines(sheet.quote)
   const rows = DISPLAY_ORDER.map((id, i) => {
     const y = 66.2 + i * 5.2
     return `<text x="11" y="${y}" font-family="${SANS}" font-weight="700" font-size="2.7" fill="${INK_TONE[id]}">${esc(STAT_LABEL[id].toUpperCase())}</text>
@@ -210,7 +218,8 @@ function printSheet(sheet, art) {
   ${title(sheet.title)}
   ${rule(17.5)}
   <text x="34.5" y="21.3" text-anchor="middle" font-family="${SERIF}" font-size="2.1" fill="${INK}">Scheda videogioco · ${esc(sheet.difficulty)}</text>
-  ${artScreen(art, 24, 32)}
+  ${artScreen(art, 24, 32 - quote.length * QUOTE_LH)}
+  ${quote.length ? quoteText(quote, 60.5 - 1.2 - (quote.length - 1) * QUOTE_LH - 0.6) : ''}
   ${rule(60.5)}
   ${rows}
   ${footer}`)

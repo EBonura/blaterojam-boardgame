@@ -36,8 +36,8 @@ export type Effect =
 export type Level = 'base' | 'speciale' | 'jolly' | 'mentor'
 export type Frame = 'verde' | 'rosso' | 'giallo' | 'arcobaleno' | 'argento' | 'bianco'
 export type PlayCard = { id: string; title: string; copies: number; frame: Frame; level: Level; effect: Effect; text: string; quote?: string[] }
-export type ImprevistoCard = { id: string; title: string; effect: Effect; text: string }
-export type Sheet = { id: string; title: string; difficulty: string; target: Record<Stat, number> }
+export type ImprevistoCard = { id: string; title: string; effect: Effect; text: string; quote?: string[] }
+export type Sheet = { id: string; title: string; difficulty: string; target: Record<Stat, number>; quote?: string[] }
 
 export const PLAY_CARDS = data.play as PlayCard[]
 export const IMPREVISTI = data.imprevisti as ImprevistoCard[]

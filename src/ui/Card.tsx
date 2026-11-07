@@ -41,7 +41,7 @@ export function Card({ card, kind = 'play', dim, selected, onClick, compact }: P
           ) : (
             <div class="fx-text">{c.text}</div>
           )}
-          {!compact && p?.quote && <div class="card-quote">{p.quote.map((l) => <div>{l}</div>)}</div>}
+          {!compact && c.quote && <div class="card-quote">{c.quote.map((l) => <div>{l}</div>)}</div>}
         </div>
       </div>
     </button>

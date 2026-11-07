@@ -470,6 +470,7 @@ function Intro({ g }: { g: GameState }) {
       <div class="intro-sheet parch">
         <div class="intro-title px">{sh.title}</div>
         <SheetFacts sheet={sh} />
+        {sh.quote && <div class="intro-quote">{sh.quote.map((l) => <div>{l}</div>)}</div>}
       </div>
       <div class="intro-why">{why}</div>
       <div class="hint">{t('introTap')}</div>

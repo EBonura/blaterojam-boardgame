@@ -126,7 +126,7 @@
 .card-fx.rows-2 .fx-num { font-size: 15cqw; } .card-fx.rows-3 .fx-num { font-size: 12cqw; } .card-fx.rows-4 .fx-num { font-size: 10cqw; }
 .card-fx.rows-3 .fx-label, .card-fx.rows-4 .fx-label { font-size: 5.5cqw; }
 .fx-text { font-size: 7cqw; font-weight: 700; line-height: 1.2; color: var(--ink); }
-.card-quote { font-family: var(--font); font-size: 4.6cqw;  color: var(--ink); line-height: 1.25; margin-top: 1.5cqw; }
+.card-quote { font-family: var(--font); font-size: 6cqw;  color: var(--ink); line-height: 1.25; margin-top: 1.5cqw; }
 .card.compact .card-in { inset: 4cqw; padding: 0 3cqw; }
 .card.compact .card-title { font-size: 7cqw; min-height: 2.6em; padding: 2cqw 5cqw 1.5cqw; }
 .card.compact .card-screen { padding: 2.5cqw 0; }
@@ -337,4 +337,5 @@
 .intro-sheet .sh-diff i { width: 10px; height: 10px; }
 .intro-sheet .sh-diff small { font-size: 12px; }
 .intro-sheet .sh-target b { min-width: 30px; font-size: 14px; padding: 3px 5px; }
+.intro-quote { font-size: 14px; line-height: 1.35; text-align: center; color: var(--ink, #3b2616); max-width: 28ch; }
 .intro-why { color: var(--yellow); font-size: 15px; text-align: center; max-width: 30ch; animation: pop-in .4s .35s both; }
