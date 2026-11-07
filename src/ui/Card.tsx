@@ -20,14 +20,17 @@ export function Card({ card, kind = 'play', dim, selected, onClick, compact }: P
   const frame = p ? p.frame : 'bianco'
   const rows = effectRows(c.effect)
   const inner = useRef<HTMLDivElement>(null)
-  // A long funny line steps down in size until the card's text fits (checked again once the font has loaded, and on resize).
+  // A long funny line steps down in size until it fits the card (checked again once the font has loaded, and on resize).
   useLayoutEffect(() => {
     const el = inner.current
     if (!el || !c.quote) return
+    // Too tall for the card, or a word too wide for the line (like a file name, which can't wrap).
+    const q = el.querySelector<HTMLElement>('.card-quote')
+    const over = () => el.scrollHeight > el.clientHeight + 1 || (!!q && q.scrollWidth > q.clientWidth + 1)
     const fit = () => {
       let s = 1
       el.style.setProperty('--qs', '1')
-      while (el.scrollHeight > el.clientHeight + 1 && s > 0.5) el.style.setProperty('--qs', String((s -= 0.05)))
+      while (over() && s > 0.5) el.style.setProperty('--qs', String((s -= 0.05)))
     }
     fit()
     document.fonts?.ready.then(fit)
