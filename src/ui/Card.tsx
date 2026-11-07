@@ -61,8 +61,9 @@ export function Card({ card, kind = 'play', dim, selected, onClick, compact }: P
           ) : (
             <div class="fx-text">{c.text}</div>
           )}
-          {c.quote && <div class="card-quote">{c.quote.map((l) => <div>{l}</div>)}</div>}
         </div>
+        {/* Its own row, so it always sits at the bottom of the card, whatever the effects above it do. */}
+        {c.quote && <div class="card-quote">{c.quote.map((l) => <div>{l}</div>)}</div>}
       </div>
     </button>
   )

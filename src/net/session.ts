@@ -369,7 +369,8 @@ function ensureSeated() {
 }
 
 function apply({ nonce, action }: Envelope) {
-  const s = confirmed
+  // The host never predicts, so what it shows is its confirmed state (the scene-setting test scripts change what it shows).
+  const s = roomState.value
   if (!s || s.recent?.includes(nonce)) return
   const next = reduce(s, action, connected.value)
   if (!next) return

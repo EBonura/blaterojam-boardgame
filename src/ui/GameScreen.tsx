@@ -514,21 +514,24 @@ function Reveal({ g }: { g: GameState }) {
     if (last && last > seen) setSeen(last)
   }, [g.events.at(-1)?.seq])
   const cur = queue[0]
-  const [step, setStep] = useState<'warn' | 'break' | 'card'>('card')
+  // The step belongs to one event: until this event's sequence has set its own, a staged Imprevisto counts as
+  // still warning, so its card can't appear for a frame before the alarm (or carry over from the previous card).
+  const [step, setStep] = useState<{ seq: number; s: 'warn' | 'card' }>({ seq: -1, s: 'card' })
+  const staged = !!cur && cur.kind === 'imprevisto' && !!cur.hits?.length && !calm()
+  const shown = cur && step.seq === cur.seq ? step.s : staged ? 'warn' : 'card'
   const next = () => {
     if (cur?.kind === 'imprevisto') shownSeq.value = Math.max(shownSeq.value, cur.seq)
     setQueue((q) => q.slice(1))
   }
   useEffect(() => {
     if (!cur) return
-    const staged = cur.kind === 'imprevisto' && !!cur.hits?.length && !calm()
     // One timer per step, chained, so each step lasts exactly its own duration.
     const timers: ReturnType<typeof setTimeout>[] = []
     const after = (ms: number, f: () => void) => timers.push(setTimeout(f, ms))
     const hold = cur.kind === 'imprevisto' ? IMPREVISTO_HOLD_MS : PLAY_HOLD_MS
-    const showCard = () => (setStep('card'), after(hold, next))
+    const showCard = () => (setStep({ seq: cur.seq, s: 'card' }), after(hold, next))
     if (staged) {
-      setStep('warn')
+      setStep({ seq: cur.seq, s: 'warn' })
       breaking.value = { seq: cur.seq, hits: cur.hits!, phase: 'warn' }
       after(WARN_MS, () => {
         breaking.value = { seq: cur.seq, hits: cur.hits!, phase: 'break' }
@@ -544,7 +547,7 @@ function Reveal({ g }: { g: GameState }) {
     return () => clearTimeout(t)
   }, [!!cur])
   useEffect(() => () => void (revealBusy.value = false), [])
-  if (!cur || step !== 'card') return null
+  if (!cur || shown !== 'card') return null
   const imp = cur.kind === 'imprevisto'
   return (
     <div class={`reveal ${cur.kind}`} key={cur.seq} onClick={next}>

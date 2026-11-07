@@ -131,7 +131,7 @@
 .card-fx.rows-2 .fx-num { font-size: 15cqw; } .card-fx.rows-3 .fx-num { font-size: 12cqw; } .card-fx.rows-4 .fx-num { font-size: 10cqw; }
 .card-fx.rows-3 .fx-label, .card-fx.rows-4 .fx-label { font-size: 5.5cqw; }
 .fx-text { font-size: 7cqw; font-weight: 700; line-height: 1.2; color: var(--ink); }
-.card-quote { font-family: var(--font); font-size: calc(6cqw * var(--qs, 1));  color: var(--ink); line-height: 1.25; margin-top: 1.5cqw; }
+.card-quote { flex: none; padding-bottom: 3.5cqw; font-family: var(--font); font-size: calc(6cqw * var(--qs, 1));  color: var(--ink); line-height: 1.25; margin-top: 1.5cqw; }
 .card.compact .card-in { inset: 4cqw; padding: 0 3cqw; }
 .card.compact .card-title { font-size: 7cqw; min-height: 2.6em; padding: 2cqw 5cqw 1.5cqw; }
 .card.compact .card-screen { padding: 2.5cqw 0; }
@@ -146,7 +146,7 @@
 .card.compact:has(.rows-3) .card-fx { flex: 1; }
 .card.compact:has(.rows-3) .card-fx::before { display: none; }
 .card.compact .fx-text { font-size: 9cqw; }
-.card.compact .card-quote { font-size: max(5px, calc(5.6cqw * var(--qs, 1))); line-height: 1.2; margin-top: .8cqw; }
+.card.compact .card-quote { font-size: max(5px, calc(5.6cqw * var(--qs, 1))); line-height: 1.2; margin-top: .8cqw; padding-bottom: 2.5cqw; }
 .card.compact .card-screen { min-height: 34%; }
 .card.dim { opacity: .35; }
 .card.sel { transform: translateY(-6px); box-shadow: inset 0 0 0 2px #e6c25a, inset 0 0 0 4px #5a3a08, 0 0 0 3px var(--gold); }
@@ -261,7 +261,7 @@
 .card-fx.rows-3 .fx:nth-child(3) { grid-column: 1 / -1; }
 .card-fx.rows-3 .fx-num, .card-fx.rows-4 .fx-num { font-size: 13cqw; }
 .card-fx.rows-3 .fx-label, .card-fx.rows-4 .fx-label { font-size: 5.5cqw; text-align: center; max-width: none; white-space: nowrap; }
-.card-fx .card-quote { grid-column: 1 / -1; }
+.card-fx:has(+ .card-quote) { padding-bottom: 1.5cqw; }
 .card.compact .rows-3 .fx-num, .card.compact .rows-4 .fx-num { font-size: 17cqw; }
 .card.compact .rows-3 .fx-label, .card.compact .rows-4 .fx-label { font-size: 7.5cqw; }
 .card.compact:has(.rows-4) .card-screen { display: none; }
