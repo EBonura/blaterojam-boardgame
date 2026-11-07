@@ -61,7 +61,7 @@ Le quattro Mentor hanno già la loro frase (scelte il 7 novembre).
 
 | Scheda | Frase |
 |---|---|
-| Arcade Retrò | Inserisci un gettone. La scadenza non si ferma. |
+| Arcade Retrò | Un gettone alla volta. Ho speso 300 euro. *(tua)* |
 | Quiz Game | Domanda da un milione: finirete in tempo? |
 | Visual Novel | Scelta 1: dormire. Scelta 2: dormire dopo. |
 | Puzzle Game | Il vero rompicapo è il codice. |
