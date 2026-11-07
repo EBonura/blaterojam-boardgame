@@ -16,12 +16,13 @@ import { load, save, deviceId } from '../storage'
 
 const APP_ID = 'blaterojam-boardgame-taranto-2026-v1'
 
-// How phones find each other: public Nostr relays by default, or public MQTT
-// brokers (switchable in the game, and every device in a room must use the same).
+// How phones find each other: public Nostr relays, or public MQTT brokers with
+// ?net=mqtt for debugging (every device in a room must use the same).
 // The MQTT client is large, so it is only downloaded when chosen.
 export type Net = 'nostr' | 'mqtt'
 const urlNet = new URLSearchParams(location.search).get('net')
-export const net = signal<Net>(urlNet === 'mqtt' || urlNet === 'nostr' ? urlNet : load<Net>('net') ?? 'nostr')
+// Nostr unless ?net=mqtt is in the URL (a debugging switch; players never choose). A choice saved by older builds is ignored.
+export const net = signal<Net>(urlNet === 'mqtt' ? 'mqtt' : 'nostr')
 let mqtt: typeof import('@trystero-p2p/mqtt') | null = null
 // Nostr relays measured as reliable for Palermo Drive (palermo-drive/src/p2p/relays.js),
 // instead of Trystero picking from 29 volunteer relays, some of which rate-limit or go quiet.
@@ -41,11 +42,6 @@ const FORCE_RELAY = new URLSearchParams(location.search).get('relay') === '1'
 /** What the connection is doing, shown on screen so a stuck join can be diagnosed. */
 export const netInfo = signal({ relays: 0, relaysTotal: 0, peers: 0, error: '' })
 
-export function setNet(n: Net) {
-  net.value = n
-  save('net', n)
-  if (code) connect(code, myName)
-}
 const HEARTBEAT_MS = 4000
 const STALE_MS = 13000
 
