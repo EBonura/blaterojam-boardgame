@@ -5,6 +5,6 @@ import './style.css'
 render(<App />, document.getElementById('app')!)
 
 // Read-only hook for the automated room tests (tools/test-rooms.mjs).
-import { roomState, connected, myId, status, dispatch } from './net/session'
+import { roomState, connected, myId, status, dispatch, reconnectNow, netInfo, debugInfo } from './net/session'
 import * as rules from './game/rules'
-;(window as any).__room = { roomState, connected, myId, status, dispatch, rules }
+;(window as any).__room = { roomState, connected, myId, status, dispatch, rules, reconnectNow, netInfo, debugInfo }

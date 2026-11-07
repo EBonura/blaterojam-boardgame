@@ -99,6 +99,7 @@ function NetStatus({ verbose = false }: { verbose?: boolean }) {
         </div>
       )}
       {verbose && hint && <p class="ns-hint">{hint}</p>}
+      {verbose && i.error && <code class="ns-err">{i.error}</code>}
     </div>
   )
 }

@@ -69,6 +69,32 @@ const peerToPlayer = new Map<string, string>()
 const lastSeen = new Map<string, number>()
 let heartbeat: ReturnType<typeof setInterval> | undefined
 let diagTimer: ReturnType<typeof setInterval> | undefined
+let hadPeers = false
+let cutOffSince = 0
+let lastJoinAt = 0
+const REJOIN_AFTER_MS = 15000
+
+/**
+ * Rejoin the room when this device has been cut off for a while: either it never
+ * got the room from anyone, or it had peers and now has no working link to any.
+ * Only while the page is visible, so a backgrounded phone doesn't spin.
+ */
+function watchdog() {
+  if (!code || document.visibilityState !== 'visible') return (cutOffSince = 0)
+  const live = Object.keys(room?.getPeers() ?? {}).some(linkUp)
+  const cutOff = status.value === 'searching' || (hadPeers && !live)
+  if (!cutOff) return (cutOffSince = 0)
+  cutOffSince ||= Date.now()
+  if (Date.now() - cutOffSince > REJOIN_AFTER_MS && Date.now() - lastJoinAt > REJOIN_AFTER_MS) {
+    cutOffSince = 0
+    connect(code, myName)
+  }
+}
+
+/** Leave and rejoin the room now (also used by the tests). */
+export function reconnectNow() {
+  if (code) connect(code, myName)
+}
 let sendHello: (h: Hello, target?: string) => void = () => {}
 let sendState: (s: RoomState, target?: string) => void = () => {}
 let sendAct: (e: Envelope) => void = () => {}
@@ -98,6 +124,7 @@ export function normaliseCode(raw: string): string {
 }
 
 export function createRoom(name: string): string {
+  hadPeers = false
   const c = makeCode()
   const id = playerIdFor(c)
   adopt(newRoom(c, id, name))
@@ -106,6 +133,7 @@ export function createRoom(name: string): string {
 }
 
 export function enterRoom(rawCode: string, name: string) {
+  hadPeers = false
   const c = normaliseCode(rawCode)
   // If we were in this room before, start from our saved copy. If everyone else
   // has gone, we can carry on from it and become host.
@@ -137,23 +165,29 @@ export function dispatch(a: Action) {
   }
 }
 
+let joinSeq = 0
+
 function connect(c: string, name: string) {
-  teardown()
+  const left = teardown()
   code = c
   myName = name
   myId.value = playerIdFor(c)
   save('lastRoom', c)
   status.value = roomState.value ? 'online' : 'searching'
   refreshConnected()
-
   netInfo.value = { relays: 0, relaysTotal: 0, peers: 0, error: '' }
-  if (net.value === 'mqtt' && !mqtt) {
-    import('@trystero-p2p/mqtt').then((m) => {
-      mqtt = m
-      if (code === c) connect(c, name)
-    })
-    return
-  }
+  lastJoinAt = Date.now()
+  // Trystero's leave() finishes asynchronously and then destroys the old room's
+  // links, which are shared with a new join of the same room. Joining before it
+  // has finished gets the new connection killed, so wait for it.
+  const seq = ++joinSeq
+  const ready = net.value === 'mqtt' && !mqtt ? import('@trystero-p2p/mqtt').then((m) => void (mqtt = m)) : Promise.resolve()
+  Promise.all([left, ready]).then(() => {
+    if (seq === joinSeq) openRoom(c)
+  })
+}
+
+function openRoom(c: string) {
   const join = net.value === 'mqtt' ? mqtt!.joinRoom : joinNostr
   const sockets = net.value === 'mqtt' ? mqtt!.getRelaySockets : nostrSockets
   const config = { appId: APP_ID, password: `blatero-${c}`, ...(TURN ? { turnConfig: TURN } : {}) }
@@ -162,12 +196,15 @@ function connect(c: string, name: string) {
     onJoinError: (d: { error?: unknown }) => (netInfo.value = { ...netInfo.value, error: String(d.error ?? 'errore') }),
   }) as Room
   const diag = () => {
+    watchdog()
     const socks = Object.values((sockets?.() ?? {}) as Record<string, { readyState?: number; connected?: boolean }>)
     netInfo.value = {
       ...netInfo.value,
       relays: socks.filter((x) => x.readyState === 1 || x.connected === true).length,
       relaysTotal: socks.length,
       peers: Object.keys(room?.getPeers() ?? {}).length,
+      // A failed link to a device we are now connected to anyway is not worth showing.
+      error: Object.keys(room?.getPeers() ?? {}).some(linkUp) ? '' : netInfo.value.error,
     }
   }
   diagTimer = setInterval(diag, 1000)
@@ -189,6 +226,8 @@ function connect(c: string, name: string) {
 
   room.onPeerJoin = (peerId) => {
     lastSeen.set(peerId, Date.now())
+    hadPeers = true
+    netInfo.value = { ...netInfo.value, error: '' }
     sendHello(myHello(), peerId)
     if (roomState.value) sendState(roomState.value, peerId)
   }
@@ -246,15 +285,16 @@ function connect(c: string, name: string) {
   ensureSeated()
 }
 
-function teardown() {
+function teardown(): Promise<unknown> {
   clearInterval(heartbeat)
   clearInterval(diagTimer)
-  room?.leave()
+  const left = room ? room.leave().catch(() => {}) : Promise.resolve()
   room = null
   peerToPlayer.clear()
   lastSeen.clear()
   pending.clear()
   hostPresence.value = null
+  return left
 }
 
 function myHello(): Hello {
@@ -284,11 +324,17 @@ function adopt(s: RoomState) {
   save(`room:${s.code}`, s)
 }
 
+/** True while the WebRTC link to this peer is actually up (browsers slow down our heartbeat in background tabs, the link itself doesn't). */
+function linkUp(peerId: string): boolean {
+  const pc = room?.getPeers()[peerId] as RTCPeerConnection | undefined
+  return !!pc && (pc.connectionState === 'connected' || pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')
+}
+
 function refreshConnected() {
   const now = Date.now()
   const ids = new Set<string>([myId.value])
   for (const [peer, pid] of peerToPlayer) {
-    if (now - (lastSeen.get(peer) ?? 0) < STALE_MS) ids.add(pid)
+    if (linkUp(peer) || now - (lastSeen.get(peer) ?? 0) < STALE_MS) ids.add(pid)
   }
   const prev = connected.value
   if (ids.size !== prev.size || [...ids].some((i) => !prev.has(i))) connected.value = ids
@@ -298,7 +344,19 @@ function refreshConnected() {
 // When we come back, rejoin the room from scratch; our saved state and id do the rest.
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && code && room) {
-    const alive = [...lastSeen.values()].some((t) => Date.now() - t < STALE_MS)
-    if (!alive) connect(code, myName)
+    const alive = Object.keys(room.getPeers()).some(linkUp)
+    if (!alive && (hadPeers || status.value === 'searching')) connect(code, myName)
   }
 })
+
+/** Connection snapshot for debugging and the tests. */
+export function debugInfo() {
+  const peers = room?.getPeers() ?? {}
+  return {
+    status: status.value,
+    version: roomState.value?.version,
+    peers: Object.entries(peers).map(([id, pc]) => ({ id: id.slice(0, 6), conn: (pc as RTCPeerConnection).connectionState, ice: (pc as RTCPeerConnection).iceConnectionState, player: peerToPlayer.get(id)?.slice(0, 6) })),
+    known: [...peerToPlayer].map(([p, pid]) => `${p.slice(0, 6)}>${pid.slice(0, 6)} ${Math.round((Date.now() - (lastSeen.get(p) ?? 0)) / 1000)}s`),
+    connected: [...connected.value].map((x) => x.slice(0, 6)),
+  }
+}
