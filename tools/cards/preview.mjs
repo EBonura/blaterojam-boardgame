@@ -9,7 +9,7 @@ const out = process.argv[2] ?? 'tools/out/cards.png'
 const ids = process.argv.slice(3)
 const files = fs.readdirSync('print').filter((f) => f.endsWith('.svg') && (!ids.length || ids.includes(f.slice(0, -4)))).map((f) => `print/${f}`)
 const html = `<body style="margin:0;padding:16px;background:#ddd;display:flex;gap:16px;flex-wrap:wrap">${files
-  .map((f) => `<img style="width:200px" src="data:image/svg+xml;base64,${fs.readFileSync(f).toString('base64')}">`)
+  .map((f) => `<img style="width:${process.env.W ?? 200}px" src="data:image/svg+xml;base64,${fs.readFileSync(f).toString('base64')}">`)
   .join('')}</body>`
 const b = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--mute-audio'] })
 const p = await b.newPage()

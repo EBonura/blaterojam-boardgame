@@ -1,8 +1,5 @@
-import data from '../cards/cards.json'
 import { playCard, imprevisto, type PlayCard, type ImprevistoCard } from '../game/rules'
 import { effectRows } from '../cards/effects'
-
-const LEVEL = data.levels as Record<string, string>
 
 type Props = {
   /** A play card instance ("caffe#2") or an Imprevisto id. */
@@ -20,7 +17,6 @@ export function Card({ card, kind = 'play', dim, selected, onClick, compact }: P
   const p: PlayCard | null = kind === 'play' ? playCard(card) : null
   const c: PlayCard | ImprevistoCard = p ?? imprevisto(card)
   const frame = p ? p.frame : 'bianco'
-  const level = p ? LEVEL[p.level] : LEVEL.imprevisto
   const rows = effectRows(c.effect)
   return (
     <button
@@ -33,8 +29,7 @@ export function Card({ card, kind = 'play', dim, selected, onClick, compact }: P
     >
       <div class="card-in">
         <div class="card-title">{c.title}</div>
-        {!compact && <div class="card-level">{level}</div>}
-        <img class="card-art" src={`./cards/art/${c.id}.svg`} alt="" draggable={false} />
+        <div class="card-screen"><img class="card-art" src={`./cards/art/${c.id}.svg`} alt="" draggable={false} /></div>
         <div class={`card-fx rows-${rows?.length ?? 0}`}>
           {rows ? (
             rows.map((r) => (

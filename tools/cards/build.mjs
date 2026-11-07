@@ -1,7 +1,9 @@
 // Builds card art and print-ready cards from src/cards/cards.json.
-//   public/cards/art/<id>.svg   pixel art used in the game (32x24 grid)
+//   public/cards/art/<id>.svg   pixel art used in the game (32x24 grid, or the size an art module exports)
 //   print/<id>.svg              full card, 63x88 mm trim + 3 mm bleed (69x94 mm)
-// Run: npm run cards
+// Look: KUDA Games' card style (parchment, aged frame tinted by card type, dark ink),
+// with the pixel art set into a dark "screen".
+// Run: npm run cards [-- <id> ...]
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -13,35 +15,40 @@ const data = JSON.parse(fs.readFileSync(path.join(root, 'src/cards/cards.json'),
 // PICO-8 palette
 export const PAL = ['#000000', '#1d2b53', '#7e2553', '#008751', '#ab5236', '#5f574f', '#c2c3c7', '#fff1e8',
   '#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8', '#ffccaa']
-const ART_W = 32, ART_H = 24
-const SANS = "system-ui, Helvetica, Arial, sans-serif"
-const PIXEL = "'Silkscreen', 'Press Start 2P', monospace"
+const SANS = 'system-ui, Helvetica, Arial, sans-serif'
+const SERIF = 'Georgia, serif'
+const AUTHORS = 'BONNIE GAMES · KUDA GAMES'
+const INK = '#3b2616'
+const INK_TONE = { gd: '#b4560a', prog: '#1d5b9b', graf: '#a52a68', audio: '#2e7a2e', neg: '#a3122a', any: '#7a4d00' }
+const RAINBOW = ['#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8']
 
-async function artSvgBody(id) {
+/** Runs an art module and returns its pixels as SVG rects, plus the grid size. */
+async function loadArt(id) {
   const file = path.join(root, 'tools/cards/art', `${id}.mjs`)
-  if (!fs.existsSync(file)) return `<text x="16" y="13" font-size="2.6" font-family="monospace" text-anchor="middle" fill="${PAL[13]}">${id}</text>`
-  const grid = Array.from({ length: ART_H }, () => Array(ART_W).fill(-1))
-  const px = (x, y, c) => { if (x >= 0 && y >= 0 && x < ART_W && y < ART_H) grid[y][x] = c }
+  if (!fs.existsSync(file)) return { w: 32, h: 24, body: `<text x="16" y="13" font-size="2.6" font-family="monospace" text-anchor="middle" fill="${PAL[13]}">${id}</text>` }
+  const mod = await import(pathToFileURL(file).href + `?t=${Date.now()}`)
+  const [W, H] = mod.size ?? [32, 24]
+  const grid = Array.from({ length: H }, () => Array(W).fill(-1))
+  const px = (x, y, c) => { if (x >= 0 && y >= 0 && x < W && y < H) grid[y][x] = c }
   const rect = (x, y, w, h, c) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) px(x + i, y + j, c) }
-  const { default: draw } = await import(pathToFileURL(file).href + `?t=${Date.now()}`)
-  draw({ px, rect })
+  mod.default({ px, rect })
   // Merge horizontal runs of one colour into single rects to keep files small.
-  let out = ''
-  for (let y = 0; y < ART_H; y++) {
-    for (let x = 0; x < ART_W; ) {
+  let body = ''
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; ) {
       const c = grid[y][x]
       let w = 1
-      while (x + w < ART_W && grid[y][x + w] === c) w++
-      if (c >= 0) out += `<rect x="${x}" y="${y}" width="${w}" height="1" fill="${PAL[c]}"/>`
+      while (x + w < W && grid[y][x + w] === c) w++
+      if (c >= 0) body += `<rect x="${x}" y="${y}" width="${w}" height="1" fill="${PAL[c]}"/>`
       x += w
     }
   }
-  return out
+  return { w: W, h: H, body }
 }
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-/** Greedy word wrap by estimated character width (~0.55em per char). */
+/** Greedy word wrap by estimated character width. */
 function wrap(text, widthMm, sizeMm, k = 0.55) {
   const max = Math.floor(widthMm / (sizeMm * k))
   const lines = []
@@ -55,99 +62,128 @@ function wrap(text, widthMm, sizeMm, k = 0.55) {
 }
 const tspans = (lines, x, lh) => lines.map((l, i) => `<tspan x="${x}" dy="${i ? lh : 0}">${esc(l)}</tspan>`).join('')
 
-function background(frame) {
-  if (frame.rainbow)
-    return `<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">${['#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8']
-      .map((c, i, a) => `<stop offset="${i / (a.length - 1)}" stop-color="${c}"/>`).join('')}</linearGradient></defs><rect width="69" height="94" fill="url(#bg)"/>`
-  if (frame.foil)
-    return `<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c2c3c7"/><stop offset=".35" stop-color="#fff1e8"/><stop offset=".5" stop-color="#83769c"/><stop offset=".65" stop-color="#fff1e8"/><stop offset="1" stop-color="#c2c3c7"/></linearGradient></defs><rect width="69" height="94" fill="url(#bg)"/>`
-  return `<rect width="69" height="94" fill="${frame.color}"/>`
+function defs(frame) {
+  const tint = frame.rainbow
+    ? `<linearGradient id="tint" x1="0" y1="0" x2="1" y2="1">${RAINBOW.map((c, i, a) => `<stop offset="${i / (a.length - 1)}" stop-color="${c}"/>`).join('')}</linearGradient>`
+    : frame.foil
+      ? `<linearGradient id="tint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9a9ca3"/><stop offset=".35" stop-color="#f4efe6"/><stop offset=".5" stop-color="#83769c"/><stop offset=".65" stop-color="#f4efe6"/><stop offset="1" stop-color="#9a9ca3"/></linearGradient>`
+      : `<linearGradient id="tint"><stop offset="0" stop-color="${frame.color}"/></linearGradient>`
+  return `<defs>
+    ${tint}
+    <filter id="paper" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="fine"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="3" seed="8" result="blot"/>
+      <feColorMatrix in="fine" type="matrix" values="0 0 0 0 0.35  0 0 0 0 0.22  0 0 0 0 0.1  0 0 0 0.22 0" result="fineC"/>
+      <feColorMatrix in="blot" type="matrix" values="0 0 0 0 0.45  0 0 0 0 0.28  0 0 0 0 0.12  0 0 0 1.1 -0.45" result="blotC"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="blotC"/><feMergeNode in="fineC"/></feMerge>
+    </filter>
+    <filter id="wood" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04 0.9" numOctaves="3" seed="5" result="grain"/>
+      <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.06  0 0 0 0 0.03  0 0 0 0.9 -0.15" result="grainC"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="grainC"/></feMerge>
+    </filter>
+    <radialGradient id="vig" cx=".5" cy=".5" r=".75"><stop offset=".55" stop-color="#5a3414" stop-opacity="0"/><stop offset="1" stop-color="#5a3414" stop-opacity=".45"/></radialGradient>
+  </defs>`
 }
 
-const TONE = { gd: PAL[9], prog: PAL[12], graf: PAL[14], audio: PAL[11], neg: PAL[8], any: PAL[10] }
+/** Thin dark rule with a small diamond in the middle, like KUDA's panel dividers. */
+const rule = (y) => `<rect x="8" y="${y - 0.35}" width="53" height="0.7" fill="${INK}" opacity=".75"/><rect x="33.6" y="${y - 0.9}" width="1.8" height="1.8" transform="rotate(45 34.5 ${y})" fill="${INK}"/>`
+const corner = (x, y, sx, sy) => `<path d="M${x} ${y + sy * 4} V${y} H${x + sx * 4}" fill="none" stroke="${INK}" stroke-width="0.6" opacity=".8"/><circle cx="${x + sx * 1.3}" cy="${y + sy * 1.3}" r="0.5" fill="${INK}" opacity=".8"/>`
 
-function titleBlock(title, y0 = 6, h = 11) {
-  const up = title.toUpperCase()
-  const size = up.length > 18 ? 3.3 : up.length > 12 ? 3.8 : 4.6
-  const lines = wrap(up, 52, size, 0.66)
-  const y = y0 + h / 2 - ((lines.length - 1) * size * 1.12) / 2 + size * 0.36
-  return `<text x="34.5" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="900" font-size="${size}" fill="${PAL[7]}">${tspans(lines, 34.5, size * 1.12)}</text>`
+function frameAndParchment(frame) {
+  return `${defs(frame)}
+  <rect width="69" height="94" fill="url(#tint)" filter="url(#wood)"/>
+  <rect width="69" height="94" fill="#2a1408" opacity=".25"/>
+  <rect x="4.6" y="4.6" width="59.8" height="84.8" rx="2.6" fill="none" stroke="#2a1408" stroke-width="0.9" opacity=".7"/>
+  <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="#ead6ac" filter="url(#paper)"/>
+  <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="url(#vig)"/>
+  <rect x="5.5" y="5.5" width="58" height="83" rx="2" fill="none" stroke="${INK}" stroke-width="0.5" opacity=".8"/>
+  ${corner(7, 7, 1, 1)}${corner(62, 7, -1, 1)}${corner(7, 87, 1, -1)}${corner(62, 87, -1, -1)}`
 }
 
-function artWindow(art, y = 21.5, h = 39) {
-  return `<svg x="${34.5 - (h * 4) / 6}" y="${y}" width="${(h * 4) / 3}" height="${h}" viewBox="0 0 ${ART_W} ${ART_H}" shape-rendering="crispEdges">${art}</svg>`
+function title(text) {
+  const up = text.toUpperCase()
+  const size = up.length > 18 ? 3.4 : up.length > 12 ? 4 : 4.8
+  const lines = wrap(up, 50, size, 0.64)
+  const y = 11.6 - ((lines.length - 1) * size * 1.1) / 2 + size * 0.36
+  return `<text x="34.5" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="${size}" letter-spacing="0.15" fill="${INK}">${tspans(lines, 34.5, size * 1.1)}</text>`
 }
 
-/** The effect box: big numbers, like the game. */
-function effectBlock(card, top, bottom) {
+/** Pixel art sits in a dark "screen" set into the parchment, so it keeps its contrast. */
+function artScreen(art, y, h) {
+  const w = (h * 4) / 3, x = 34.5 - w / 2
+  return `<rect x="${x - 1.4}" y="${y - 1.4}" width="${w + 2.8}" height="${h + 2.8}" rx="2" fill="${INK}"/>
+  <rect x="${x - 0.5}" y="${y - 0.5}" width="${w + 1}" height="${h + 1}" rx="1.2" fill="#14203f"/>
+  <svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="0 0 ${art.w} ${art.h}" shape-rendering="crispEdges">${art.body}</svg>`
+}
+
+const footer = `<text x="34.5" y="87.4" text-anchor="middle" font-family="${SANS}" font-size="1.5" letter-spacing="0.2" fill="${INK}" opacity=".75">${AUTHORS}</text>`
+
+/** The effect box: big numbers in dark inks. */
+function effect(card, top, bottom) {
   const rows = effectRows(card.effect)
   const h = bottom - top
-  let out = ''
   if (!rows) {
-    const lines = wrap(card.text, 48, 3.6)
+    const lines = wrap(card.text, 46, 3.6)
     const y = top + h / 2 - ((lines.length - 1) * 4.5) / 2 + 1.3
-    return `<text x="34.5" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="3.6" fill="${PAL[7]}">${tspans(lines, 34.5, 4.5)}</text>`
+    return `<text x="34.5" y="${y}" text-anchor="middle" font-family="${SANS}" font-weight="600" font-size="3.6" fill="${INK}">${tspans(lines, 34.5, 4.5)}</text>`
   }
-  const quote = card.quote ? card.quote.flatMap((l) => wrap(l, 50, 2.3, 0.46)) : []
-  const space = h - (quote.length ? quote.length * 3 + 1.5 : 0)
-  const num = Math.min([0, 13, 9, 7, 5.6][rows.length], (space / rows.length) * 0.82)
-  const step = space / rows.length
+  const quote = card.quote ? card.quote.flatMap((l) => wrap(l, 48, 2.3, 0.46)) : []
+  const space = h - (quote.length ? quote.length * 3 + 1 : 0)
+  let out = ''
   if (rows.length === 1) {
-    // One effect: a huge number with its label centred underneath.
-    const r = rows[0], fill = TONE[r.tone]
+    const r = rows[0], fill = INK_TONE[r.tone]
     const big = Math.min(14, space * 0.55)
-    const label = wrap(r.label.toUpperCase(), 50, 3, 0.62)
+    const label = wrap(r.label.toUpperCase(), 48, 3, 0.62)
     const block = big * 0.75 + 1.5 + label.length * 3.3
     const y0 = top + (space - block) / 2 + big * 0.75
     out += `<text x="34.5" y="${y0}" text-anchor="middle" font-family="${SANS}" font-weight="900" font-size="${big}" fill="${fill}">${esc(r.num)}</text>`
-    out += `<text x="34.5" y="${y0 + 1.5 + 3}" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="3" fill="${fill}">${tspans(label, 34.5, 3.3)}</text>`
-  } else rows.forEach((r, i) => {
-    const cy = top + step * (i + 0.5) + num * 0.36
-    const fill = TONE[r.tone]
-    const ls = Math.max(2.4, Math.min(3.4, num * 0.42))
-    out += `<text x="30" y="${cy}" text-anchor="end" font-family="${SANS}" font-weight="900" font-size="${num}" fill="${fill}">${esc(r.num)}</text>`
-    out += `<text x="32" y="${cy - num * 0.36 + ls * 0.36}" font-family="${SANS}" font-weight="800" font-size="${ls}" fill="${fill}">${esc(r.label.toUpperCase())}</text>`
-  })
-  if (quote.length)
-    out += `<text x="34.5" y="${top + space + 2.2}" text-anchor="middle" font-family="${SANS}" font-style="italic" font-size="2.3" fill="${PAL[15]}">${tspans(quote, 34.5, 3)}</text>`
+    out += `<text x="34.5" y="${y0 + 4.5}" text-anchor="middle" font-family="${SANS}" font-weight="700" font-size="3" letter-spacing="0.2" fill="${fill}">${tspans(label, 34.5, 3.3)}</text>`
+  } else {
+    const step = space / rows.length
+    const num = Math.min([0, 13, 9, 7, 5.6][rows.length], step * 0.82)
+    rows.forEach((r, i) => {
+      const cy = top + step * (i + 0.5) + num * 0.36
+      const fill = INK_TONE[r.tone]
+      const ls = Math.max(2.4, Math.min(3.4, num * 0.42))
+      out += `<text x="30" y="${cy}" text-anchor="end" font-family="${SANS}" font-weight="900" font-size="${num}" fill="${fill}">${esc(r.num)}</text>`
+      out += `<text x="32" y="${cy - num * 0.36 + ls * 0.36}" font-family="${SANS}" font-weight="700" font-size="${ls}" fill="${fill}">${esc(r.label.toUpperCase())}</text>`
+    })
+  }
+  if (quote.length) out += `<text x="34.5" y="${top + space + 1.8}" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-size="2.3" fill="${INK}">${tspans(quote, 34.5, 3)}</text>`
   return out
 }
 
-function printCard(card, frame, label, art) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="69mm" height="94mm" viewBox="0 0 69 94">
+const svg = (inner) => `<svg xmlns="http://www.w3.org/2000/svg" width="69mm" height="94mm" viewBox="0 0 69 94">
   <!-- trim box: x 3..66, y 3..91. Safe area: 3 mm inside the trim. -->
-  ${background(frame)}
-  <rect x="6" y="6" width="57" height="82" rx="2.5" fill="${PAL[1]}"/>
-  <path d="M6 17 V8.5 a2.5 2.5 0 0 1 2.5 -2.5 H60.5 a2.5 2.5 0 0 1 2.5 2.5 V17 Z" fill="#14203f"/>
-  <rect x="6" y="17" width="57" height="0.7" fill="${frame.color}"/>
-  ${titleBlock(card.title)}
-  <text x="60.5" y="21" text-anchor="end" font-family="${SANS}" font-style="italic" font-weight="700" font-size="2.6" fill="${frame.color}">${esc(label)}</text>
-  ${artWindow(art)}
-  <path d="M6 62 H63 V85.5 a2.5 2.5 0 0 1 -2.5 2.5 H8.5 a2.5 2.5 0 0 1 -2.5 -2.5 Z" fill="#16244a"/>
-  <rect x="6" y="62" width="57" height="0.7" fill="${frame.color}"/>
-  ${effectBlock(card, 63, 85.5)}
-  <text x="34.5" y="87.2" text-anchor="middle" font-family="${SANS}" font-size="1.5" fill="${PAL[13]}">BLATERO GAME JAM · KUDA GAMES</text>
+  ${inner}
 </svg>
 `
+
+function printCard(card, frame, art) {
+  return svg(`${frameAndParchment(frame)}
+  ${title(card.title)}
+  ${rule(17.5)}
+  ${artScreen(art, 21.5, 36)}
+  ${rule(61.5)}
+  ${effect(card, 62.5, 85.5)}
+  ${footer}`)
 }
 
 function printSheet(sheet, art) {
   const rows = DISPLAY_ORDER.map((id, i) => {
-    const y = 64.5 + i * 5.6
-    return `<text x="11" y="${y}" font-family="${SANS}" font-weight="700" font-size="3.4" fill="${TONE[id]}">${esc(STAT_LABEL[id])}</text>
-  <text x="58" y="${y}" text-anchor="end" font-family="${SANS}" font-weight="900" font-size="4.6" fill="${PAL[7]}">${sheet.target[id]}</text>`
+    const y = 66.2 + i * 5.2
+    return `<text x="11" y="${y}" font-family="${SANS}" font-weight="700" font-size="3.3" fill="${INK_TONE[id]}">${esc(STAT_LABEL[id].toUpperCase())}</text>
+  <text x="58" y="${y + 0.4}" text-anchor="end" font-family="${SANS}" font-weight="900" font-size="5" fill="${INK}">${sheet.target[id]}</text>`
   }).join('\n  ')
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="69mm" height="94mm" viewBox="0 0 69 94">
-  <rect width="69" height="94" fill="${PAL[12]}"/>
-  <rect x="6" y="6" width="57" height="82" rx="2.5" fill="${PAL[1]}"/>
-  <path d="M6 17 V8.5 a2.5 2.5 0 0 1 2.5 -2.5 H60.5 a2.5 2.5 0 0 1 2.5 2.5 V17 Z" fill="#14203f"/>
-  ${titleBlock(sheet.title)}
-  ${artWindow(art, 19.5, 36)}
-  <text x="34.5" y="60" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="2.2" letter-spacing="0.2" fill="${PAL[12]}">SCHEDA VIDEOGIOCO · ${esc(sheet.difficulty.toUpperCase())}</text>
+  return svg(`${frameAndParchment({ color: PAL[12] })}
+  ${title(sheet.title)}
+  ${rule(17.5)}
+  <text x="34.5" y="21.3" text-anchor="middle" font-family="${SERIF}" font-style="italic" font-size="2.8" fill="${INK}">Scheda videogioco · ${esc(sheet.difficulty)}</text>
+  ${artScreen(art, 24, 32)}
+  ${rule(60.5)}
   ${rows}
-  <text x="34.5" y="86.3" text-anchor="middle" font-family="${SANS}" font-size="1.8" fill="${PAL[13]}">BLATERO GAME JAM · KUDA GAMES</text>
-</svg>
-`
+  ${footer}`)
 }
 
 const artDir = path.join(root, 'public/cards/art')
@@ -157,26 +193,27 @@ fs.mkdirSync(printDir, { recursive: true })
 
 const only = process.argv.slice(2)
 const want = (id) => !only.length || only.includes(id)
-const writeArt = (id, art) => fs.writeFileSync(path.join(artDir, `${id}.svg`), `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${ART_W} ${ART_H}" shape-rendering="crispEdges">${art}</svg>\n`)
+const writeArt = (id, art) =>
+  fs.writeFileSync(path.join(artDir, `${id}.svg`), `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${art.w} ${art.h}" shape-rendering="crispEdges">${art.body}</svg>\n`)
 
 let n = 0
 for (const card of data.play) {
   if (!want(card.id)) continue
-  const art = await artSvgBody(card.id)
+  const art = await loadArt(card.id)
   writeArt(card.id, art)
-  fs.writeFileSync(path.join(printDir, `${card.id}.svg`), printCard(card, data.frames[card.frame], data.levels[card.level], art))
+  fs.writeFileSync(path.join(printDir, `${card.id}.svg`), printCard(card, data.frames[card.frame], art))
   n++
 }
 for (const card of data.imprevisti) {
   if (!want(card.id)) continue
-  const art = await artSvgBody(card.id)
+  const art = await loadArt(card.id)
   writeArt(card.id, art)
-  fs.writeFileSync(path.join(printDir, `${card.id}.svg`), printCard(card, data.frames.bianco, data.levels.imprevisto, art))
+  fs.writeFileSync(path.join(printDir, `${card.id}.svg`), printCard(card, data.frames.bianco, art))
   n++
 }
 for (const sheet of data.sheets) {
   if (!want(sheet.id)) continue
-  const art = await artSvgBody(sheet.id)
+  const art = await loadArt(sheet.id)
   writeArt(sheet.id, art)
   fs.writeFileSync(path.join(printDir, `${sheet.id}.svg`), printSheet(sheet, art))
   n++
