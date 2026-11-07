@@ -23,6 +23,13 @@ const strings = {
   cpu: 'CPU',
   cpuThinking: '{name} ci sta pensando…',
   roomFull: 'La stanza è piena o la partita è già iniziata.',
+  voteTitle: 'Che gioco facciamo?',
+  voteHint: 'Scegli fino a {n} videogiochi. Si fa il più votato; in caso di pareggio decide la sorte.',
+  voteConfirm: 'Conferma ({n}/{max})',
+  voteAny: 'Per me va bene tutto',
+  voteChange: 'Cambia la scelta',
+  voteWaiting: 'Mancano: {names}',
+  votes: '{n} voti',
   turn: 'Turno {n}',
   endTurn: 'Fine turno',
 }

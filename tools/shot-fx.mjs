@@ -18,6 +18,7 @@ await p.locator('input[autocomplete=nickname]').fill('Anna')
 await p.locator('button.primary').click()
 for (let i = 0; i < 3; i++) await p.locator('button.add-cpu').click()
 await p.locator('button.primary').click()
+await p.locator('.vote-bar button.primary').click()
 
 const myTurn = () =>
   p.waitForFunction(() => {

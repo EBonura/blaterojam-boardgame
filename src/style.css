@@ -110,3 +110,28 @@ h2 { margin: 6px 0 0; font-size: 18px; }
 @keyframes hero-float { 0%, 100% { transform: translateY(0) rotateY(-6deg) rotateX(3deg); } 50% { transform: translateY(-10px) rotateY(6deg) rotateX(-3deg); } }
 @keyframes hero-spin { from { transform: rotateY(-360deg) scale(.85); } }
 @media (prefers-reduced-motion: reduce) { .hero-card { animation: none; } }
+
+/* vote: which videogame to make */
+.vote { display: flex; flex-direction: column; gap: 12px; padding: 14px 0 0; flex: 1; }
+.vote h2 { margin: 0 0 6px; text-align: center; color: var(--yellow); font-size: clamp(18px, 5.4vw, 24px); }
+.sheets { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sheet { width: 100%; height: 100%; display: grid; grid-template-columns: 1fr auto; grid-template-areas: "title title" "diff votes" "target votes";
+  gap: 5px 6px; align-items: center; text-align: left; padding: 9px 10px; min-height: 0; border: 3px solid transparent; font-weight: 700; }
+.sheet:disabled { opacity: 1; }
+.sheet.on { background: var(--yellow); border-color: #000; box-shadow: 0 4px 0 #b9a400; }
+.sh-title { grid-area: title; font-size: 13px; line-height: 1.1; font-weight: 800; }
+.sh-diff { grid-area: diff; display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.sh-diff i { width: 7px; height: 7px; background: rgba(29, 43, 83, .18); }
+.sh-diff i.lit { background: var(--red); }
+.sh-diff small { margin-left: 5px; font-size: 9px; color: #5b6380; white-space: nowrap; }
+.sh-target { grid-area: target; display: flex; gap: 3px; }
+.sh-target b { min-width: 20px; padding: 1px 3px; text-align: center; font-size: 10px; color: #000; border-radius: 3px; }
+.st-gd { background: var(--gd); } .st-prog { background: var(--prog); } .st-graf { background: var(--graf); } .st-audio { background: var(--audio); }
+.sh-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; margin: 8px 0 0; font-size: 11px; color: var(--cream); }
+.sh-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.sh-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.sh-votes { grid-area: votes; display: flex; flex-direction: column; flex-wrap: wrap-reverse; gap: 3px; align-self: end; max-height: 46px; }
+.sh-votes i { width: 20px; height: 20px; display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 900;
+  color: var(--cream); background: var(--navy); border-radius: 50%; animation: pop-in .25s cubic-bezier(.2, 1.6, .4, 1) both; }
+.vote-bar { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 4px; padding: 12px 0 calc(4px + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, var(--night) 22%); margin-top: auto; }

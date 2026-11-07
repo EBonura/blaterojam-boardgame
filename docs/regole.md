@@ -6,7 +6,7 @@ Questa è la versione usata dal gioco digitale: le regole del Game Design Docume
 
 ## Obiettivo
 
-Si estrae a caso una **Scheda Videogioco**. Ha quattro valori da raggiungere: Programmazione, Game Design, Grafica, Audio. Il team vince quando tutte e quattro le statistiche sono **esattamente** sui valori della scheda, nello stesso momento. Superare un obiettivo non vale.
+Prima di iniziare si sceglie la **Scheda Videogioco**: ogni giocatore vota fino a 3 videogiochi e si fa il più votato; in caso di pareggio si estrae a sorte tra i più votati (se nessuno vota, tra tutti). Le CPU non votano. La scheda ha quattro valori da raggiungere: Programmazione, Game Design, Grafica, Audio. Il team vince quando tutte e quattro le statistiche sono **esattamente** sui valori della scheda, nello stesso momento. Superare un obiettivo non vale.
 
 ## Plancia
 

@@ -156,6 +156,7 @@ try {
     s = await waitFor(A, (s) => s.players.length === 4, 'a CPU removed')
     check(s.players.filter((p) => p.cpu).length === 3, 'the host removed a CPU')
     await A.page.locator('button.primary').click()
+    await A.page.locator('.vote-bar button.primary').click()
     s = await waitFor(A, (s) => s.phase === 'playing', 'game start')
     check(s.phase === 'playing', 'one phone and three CPUs can start a game')
     await playToEnd(A, 'Anna + 3 CPU')
@@ -173,6 +174,7 @@ try {
     await waitFor(B, (s) => s.players.filter((p) => p.cpu).length === 2, 'Bruno sees the CPUs')
     check((await B.page.$$('button.add-cpu')).length === 0, 'only the host has "Aggiungi CPU"')
     await A.page.locator('button.primary').click()
+    for (const d of [A, B]) await d.page.locator('.vote-bar button.primary').click()
     await waitFor(B, (s) => s.phase === 'playing', 'game start on Bruno')
 
     // A few turns with Anna hosting. Both phones play their own turns.

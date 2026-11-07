@@ -6,13 +6,14 @@ import { hostOf, present } from '../room/state'
 import { MIN_PLAYERS, MAX_PLAYERS } from '../game/rules'
 import { GameScreen } from './GameScreen'
 import { Credits } from './Credits'
+import { Vote } from './Vote'
 
 export function App() {
   const s = roomState.value
   return (
     <div class="app">
       <main class="screen">
-        {status.value === 'idle' ? <Home /> : !s ? <Searching /> : s.phase === 'lobby' ? <Lobby /> : <InGame />}
+        {status.value === 'idle' ? <Home /> : !s ? <Searching /> : s.phase === 'lobby' ? <Lobby /> : s.phase === 'voting' ? <InVote /> : <InGame />}
       </main>
     </div>
   )
@@ -195,6 +196,16 @@ function Lobby() {
         {t('leave')}
       </button>
     </section>
+  )
+}
+
+function InVote() {
+  const seated = roomState.value!.players.some((p) => p.id === myId.value)
+  return (
+    <>
+      {!seated && <ClaimSeat />}
+      <Vote />
+    </>
   )
 }
 

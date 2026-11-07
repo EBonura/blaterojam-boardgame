@@ -39,7 +39,8 @@ const snap = (d) =>
     const s = r.roomState.value
     const g = s?.game
     return s && { version: s.version, phase: s.phase, players: s.players.map((p) => p.name), me: r.myId.value, online: r.connected.value.size,
-      turn: g?.turn, current: g && r.rules.currentPlayer(g), stats: g?.stats, gameJson: g && JSON.stringify(g.order) }
+      turn: g?.turn, current: g && r.rules.currentPlayer(g), stats: g?.stats, gameJson: g && JSON.stringify(g.order), sheet: g?.sheet,
+      votes: Object.fromEntries(Object.entries(s.votes ?? {}).map(([id, v]) => [s.players.find((p) => p.id === id)?.name, v])) }
   })
 async function waitFor(d, pred, what, ms = 45000) {
   const end = Date.now() + ms
@@ -81,7 +82,17 @@ try {
   }
 
   await A.page.locator('button.primary').click()
+  for (const d of devs) await waitFor(d, (s) => s.phase === 'voting', 'the vote')
+  // Anna and Bruno pick Puzzle Game, Bruno and Carla Quiz Game, Carla Roguelike, Dario nothing. Then Carla swaps Roguelike for Puzzle Game: 3 to 2.
+  const pick = (d, title) => d.page.evaluate((title) => [...document.querySelectorAll('.sheet')].find((b) => b.querySelector('.sh-title').textContent === title).click(), title)
+  await pick(A, 'Puzzle Game'); await pick(B, 'Puzzle Game'); await pick(B, 'Quiz Game'); await pick(C, 'Quiz Game'); await pick(C, 'Roguelike')
+  await waitFor(D, (s) => s.votes?.Carla?.length === 2, 'Dario sees Carla\'s picks')
+  check((await D.page.$$eval('.sheet', (bs) => bs.map((b) => b.querySelectorAll('.sh-votes i').length))).reduce((a, b) => a + b, 0) === 5, 'the live tally shows all five picks on Dario\'s phone')
+  await pick(C, 'Roguelike'); await pick(C, 'Puzzle Game')
+  for (const d of devs) await d.page.locator('.vote-bar button.primary').click()
   for (const d of devs) await waitFor(d, (s) => s.phase === 'playing', 'game start')
+  const started = await snap(A)
+  check(started.sheet === 'puzzle-game', `the most voted videogame is made (${started.sheet})`)
   check(true, 'game started on all devices')
 
   const live = () => devs.filter((d) => !d.page.isClosed())

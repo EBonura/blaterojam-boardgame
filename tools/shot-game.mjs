@@ -18,6 +18,9 @@ for (const [w, h, tag] of [[390, 750, 'iphone'], [360, 640, 'small']]) {
   await new Promise((r) => setTimeout(r, 300))
   if (tag === 'iphone') await p.screenshot({ path: `tools/out/lobby.png` })
   await p.locator('button.primary').click()
+  await new Promise((r) => setTimeout(r, 300))
+  if (tag === 'iphone') await p.screenshot({ path: `tools/out/vote.png` })
+  await p.locator('.vote-bar button.primary').click()
   // wait for my turn
   await p.waitForFunction(() => { const r = window.__room; const g = r.roomState.value?.game; return g && r.rules.currentPlayer(g) === r.myId.value && !document.querySelector('.reveal') }, { timeout: 60000 })
   // tap through any reveals still queued from the CPUs' moves

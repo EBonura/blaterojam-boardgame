@@ -5,8 +5,10 @@ import '@fontsource/silkscreen/400.css'
 import '@fontsource/silkscreen/700.css'
 import './style.css'
 import { startCpuDriver } from './net/cpuDriver'
+import { startVoteDriver } from './net/voteDriver'
 
 startCpuDriver()
+startVoteDriver()
 render(<App />, document.getElementById('app')!)
 startHolo()
 
