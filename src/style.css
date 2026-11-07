@@ -51,10 +51,11 @@ input:focus { outline: 3px solid var(--yellow); outline-offset: 2px; }
 .field { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 14px; }
 .join { display: flex; gap: 8px; }
 .join .code { text-transform: uppercase; letter-spacing: .25em; font-weight: 800; text-align: center; }
-.kuda { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
-.kuda img { height: 28px; width: auto; }
-.kuda.large { flex-direction: column; align-items: flex-start; gap: 6px; padding: 4px 0; }
-.kuda.large img { height: 56px; }
+.credits { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; text-align: center; padding: 6px 0 2px; }
+.credits .logos { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.credits img { height: clamp(56px, 16vw, 84px); width: auto; animation: pop-in .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+.credits img:last-child { animation-delay: .15s; }
+.credits .amp { font-size: 22px; color: var(--yellow); }
 
 /* lobby */
 .roomcode { display: flex; flex-direction: column; align-items: center; padding: 12px; position: relative; overflow: hidden; }

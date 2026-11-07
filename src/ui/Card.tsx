@@ -48,7 +48,7 @@ export function Card({ card, kind = 'play', dim, selected, onClick, compact }: P
   )
 }
 
-export function CardBack({ onClick, label }: { onClick?: () => void; label?: string }) {
+export function CardBack({ onClick, label }: { onClick?: (e: MouseEvent) => void; label?: string }) {
   return (
     <button type="button" class="card back" onClick={onClick} disabled={!onClick} aria-label={label ?? 'Carta coperta'}>
       <div class="card-in">

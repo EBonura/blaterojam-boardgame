@@ -2,7 +2,7 @@
 const strings = {
   title: 'BLATERO, il gioco da tavolo della Blatero Game Jam',
   subtitle: 'Il gioco da tavolo della game jam',
-  byKuda: 'Un gioco di KUDA Games',
+  byStudios: 'Un gioco KUDA Games & Bonnie Studios',
   yourName: 'Il tuo nome',
   createRoom: 'Crea una stanza',
   joinRoom: 'Entra',

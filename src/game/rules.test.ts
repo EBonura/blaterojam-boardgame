@@ -228,3 +228,16 @@ describe('preview', () => {
     expect(previewPlay(g, 'autocompletamento#1')?.wins).toBe(true)
   })
 })
+
+describe('events for the board animations', () => {
+  it('records which thresholds set off the Imprevisto', () => {
+    const g = game({ stats: { gd: 0, prog: 5, graf: 0, audio: 0 }, hand: ['spaghetti-code#1'], impDeck: ['divergenze-creative'] })
+    const n = play(g, { type: 'play', card: 'spaghetti-code#1' })! // prog 5 -> 11 crosses 7 and 11
+    expect(n.events.find((e) => e.kind === 'imprevisto')?.hits).toEqual([{ stat: 'prog', t: 7 }, { stat: 'prog', t: 11 }])
+  })
+  it('marks a face-down play', () => {
+    const g = game({ blind: true, hand: ['caffe#1'] })
+    const n = play(g, { type: 'play', card: 'caffe#1' })!
+    expect(n.events.find((e) => e.kind === 'play')?.blind).toBe(true)
+  })
+})

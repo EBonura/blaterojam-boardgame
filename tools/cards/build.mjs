@@ -22,7 +22,7 @@ const FONT_DIR = path.join(root, 'node_modules/@fontsource/silkscreen/files')
 const fontFace = (w) => ['latin', 'latin-ext'].map((sub) =>
   `@font-face{font-family:'Silkscreen';font-weight:${w};src:url(data:font/woff2;base64,${fs.readFileSync(path.join(FONT_DIR, `silkscreen-${sub}-${w}-normal.woff2`)).toString('base64')}) format('woff2')}`).join('')
 const FONT_CSS = `<style>${fontFace(400)}${fontFace(700)}</style>`
-const AUTHORS = 'BONNIE GAMES · KUDA GAMES'
+const AUTHORS = 'KUDA GAMES · BONNIE STUDIOS'
 const INK = '#3b2616'
 const INK_TONE = { gd: '#b4560a', prog: '#1d5b9b', graf: '#a52a68', audio: '#2e7a2e', neg: '#a3122a', any: '#7a4d00' }
 // The frame is lacquer in the card type's colour with a gold edge (same as the game).

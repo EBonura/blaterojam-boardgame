@@ -5,7 +5,7 @@ import { roomState, status, connected, hostPresence, myId, amHost, createRoom, e
 import { hostOf, present } from '../room/state'
 import { MIN_PLAYERS, MAX_PLAYERS } from '../game/rules'
 import { GameScreen } from './GameScreen'
-import { KudaBadge } from './KudaBadge'
+import { Credits } from './Credits'
 
 export function App() {
   const s = roomState.value
@@ -26,7 +26,7 @@ function Home() {
 
   return (
     <section class="home">
-      <KudaBadge large />
+      <Credits />
       <h1 aria-label={t('title')}>
         {'BLATERO'.split('').map((ch, i) => <span class={`c${(i % 4) + 1}`}>{ch}</span>)}
         <small>{t('subtitle')}</small>

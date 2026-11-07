@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
+import { signal } from '@preact/signals'
 import { roomState, connected, myId, dispatch, leaveRoom } from '../net/session'
 import { t } from '../text'
 import { DISPLAY_ORDER, STAT_SHORT } from '../cards/effects'
@@ -17,6 +18,32 @@ const send = (move: Move) => dispatch({ type: 'move', id: myId.value, move })
 const here = () => present(roomState.value!, connected.value)
 const cpu = (id: string) => isCpu(roomState.value!, id)
 const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/** Thresholds breaking on the CRT right now (set by Reveal just before an Imprevisto card shows). */
+const breaking = signal<{ seq: number; hits: { stat: Stat; t: number }[] } | null>(null)
+const BREAK_MS = 1200
+
+/** Flies a card element into the CRT, then calls `done`. */
+function flyIntoCrt(el: HTMLElement, done: () => void, wobble = false) {
+  const crt = document.querySelector('.crt')?.getBoundingClientRect()
+  if (!crt || calm()) return done()
+  const from = el.getBoundingClientRect()
+  const dx = crt.left + crt.width / 2 - (from.left + from.width / 2)
+  const dy = crt.top + crt.height / 2 - (from.top + from.height / 2)
+  const lift = wobble
+    ? [{ transform: 'none' }, { transform: 'translateY(-30px) rotate(-8deg) scale(1.1)', offset: 0.12 }, { transform: 'translateY(-30px) rotate(8deg) scale(1.1)', offset: 0.22 },
+       { transform: 'translateY(-34px) rotate(0) scale(1.12)', offset: 0.32 }, { transform: 'translateY(-40px) perspective(600px) rotateY(180deg) scale(1.15)', offset: 0.5 },
+       { transform: 'translateY(-40px) perspective(600px) rotateY(360deg) scale(1.15)', offset: 0.66 }]
+    : [{ transform: 'none' }, { transform: 'translateY(12px) scale(1.04)', offset: 0.18 }]
+  el.style.position = 'relative'
+  el.style.zIndex = '20'
+  const a = el.animate([...lift, { transform: `translate(${dx}px, ${dy}px) scale(.18) rotate(${wobble ? 540 : 18}deg)`, opacity: 0.2 }], {
+    duration: wobble ? 950 : 520,
+    easing: 'cubic-bezier(.5,0,.75,0)',
+    fill: 'forwards',
+  })
+  a.onfinish = done
+}
 
 /** A card picked from the hand, with where it was on screen so it can fly from there. */
 type Picked = { card: string; from: DOMRect }
@@ -123,11 +150,12 @@ function Crt({ g, preview }: { g: GameState; preview: Preview | null }) {
   // Rows that overflowed in the latest events flash red.
   const flashed = new Set(g.events.filter((e) => e.seq > prevSeq && e.kind === 'overflow').map((e) => e.stat))
   return (
-    <div class={`crt ${inBuffer(g) ? 'buffer' : ''} ${preview ? 'previewing' : ''}`}>
+    <div class={`crt ${inBuffer(g) ? 'buffer' : ''} ${preview ? 'previewing' : ''} ${breaking.value ? 'glitch' : ''}`}>
       <div class="glass">
         {DISPLAY_ORDER.map((st) => (
           <Bar key={st} st={st} v={g.stats[st]} from={prev[st]} t={target[st]} lost={g.overflowed.includes(st)} flash={flashed.has(st)}
-            next={preview ? preview.stats[st] : g.stats[st]} boom={!!preview?.overflow.includes(st)} />
+            next={preview ? preview.stats[st] : g.stats[st]} boom={!!preview?.overflow.includes(st)}
+            breaks={breaking.value?.hits.filter((h) => h.stat === st).map((h) => h.t) ?? []} breakKey={breaking.value?.seq ?? 0} />
         ))}
         <div class="scale px" aria-hidden="true">
           {[0, 7, 11, 13, 15, 20].map((n) => (
@@ -147,7 +175,7 @@ function Crt({ g, preview }: { g: GameState; preview: Preview | null }) {
 }
 
 /** One stat. `next`/`boom` preview the card on centre stage: ghost boxes it would fill, boxes it would empty, an overflow. */
-function Bar({ st, v, from, t, lost, flash, next, boom }: { st: Stat; v: number; from: number; t: number; lost: boolean; flash: boolean; next: number; boom: boolean }) {
+function Bar({ st, v, from, t, lost, flash, next, boom, breaks, breakKey }: { st: Stat; v: number; from: number; t: number; lost: boolean; flash: boolean; next: number; boom: boolean; breaks: number[]; breakKey: number }) {
   // Remount the boxes when the value changes, so the fill and drain animations replay.
   const [gen, setGen] = useState(0)
   const [last, setLast] = useState({ from: v, to: v })
@@ -183,9 +211,16 @@ function Bar({ st, v, from, t, lost, flash, next, boom }: { st: Stat; v: number;
                 !boom && next > v && k > v && k <= next && 'ghost',
                 ((!boom && next < v && k > next && k <= v) || (boom && on)) && 'lose',
                 boom && k === OVERFLOW && 'blast',
+                breaks.includes(k) && 'breaking',
               ].filter(Boolean).join(' ')}
               style={step ? { animationDelay: `${step * 45}ms` } : undefined}
-            />
+            >
+              {breaks.includes(k) && (
+                <span class="shatter" key={`${breakKey}-${k}`} aria-hidden="true">
+                  <b class="s1" /><b class="s2" /><b class="s3" /><b class="s4" />
+                </span>
+              )}
+            </i>
           )
         })}
       </div>
@@ -207,7 +242,7 @@ function TurnBar({ g }: { g: GameState }) {
   const away = !here().has(who)
   const notes: string[] = []
   if (inBuffer(g)) notes.push('Buffer: solo carte Base')
-  if (g.blind) notes.push('Blackout: carta coperta')
+  if (g.blind) notes.push(mine ? 'Blackout! Tocca una carta coperta: la giochi alla cieca' : 'Blackout: carta coperta')
   if (g.toPlay > 1) notes.push(`Tempo quasi scaduto: ancora ${g.toPlay} carte`)
   const noLegal = mine && !g.blind && !g.hand.some((c) => isLegal(g, c))
   return (
@@ -246,11 +281,13 @@ function Hand({ g, picked, onPick }: { g: GameState; picked: string | null; onPi
   if (!mine || g.blind) {
     return (
       <div class={`hand ${mine ? 'blind' : 'others'}`}>
-        {mine && <p class="hint">Blackout! Scegli una carta coperta: verrà giocata senza vederla.</p>}
         <div class="cards" key={key}>
           {g.hand.map((c, i) => (
             <div class="slot" style={fan(i)}>
-              <CardBack label={mine ? `Carta coperta ${i + 1}` : undefined} onClick={mine ? () => send({ type: 'play', card: c }) : undefined} />
+              <CardBack
+                label={mine ? `Carta coperta ${i + 1}` : undefined}
+                onClick={mine ? (e) => flyIntoCrt(e.currentTarget as HTMLElement, () => send({ type: 'play', card: c }), true) : undefined}
+              />
             </div>
           ))}
         </div>
@@ -308,17 +345,9 @@ function Stage({ g, picked, onPreview, onClose }: { g: GameState; picked: Picked
     onPreview(null)
     const move: Move = { type: 'play', card: picked.card, stat: stat ?? undefined, value: card.effect.type === 'set' ? value : undefined }
     const el = cardRef.current
-    const crt = document.querySelector('.crt')?.getBoundingClientRect()
-    if (!el || !crt || calm()) return send(move)
+    if (!el) return send(move)
     setLeaving(true)
-    const from = el.getBoundingClientRect()
-    const dx = crt.left + crt.width / 2 - (from.left + from.width / 2)
-    const dy = crt.top + crt.height / 2 - (from.top + from.height / 2)
-    const a = el.animate(
-      [{ transform: 'none' }, { transform: 'translateY(12px) scale(1.04)', offset: 0.18 }, { transform: `translate(${dx}px, ${dy}px) scale(.18) rotate(18deg)`, opacity: 0.2 }],
-      { duration: 520, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' },
-    )
-    a.onfinish = () => send(move)
+    flyIntoCrt(el, () => send(move))
   }
 
   return (
@@ -373,6 +402,7 @@ function describe(e: GameEvent): string | null {
   switch (e.kind) {
     case 'play': {
       const c = playCard(e.card!)
+      if (e.blind && e.player === myId.value) return `Hai giocato alla cieca: ${c.title}${e.stat ? ` su ${STAT_NAME[e.stat]}` : ''}`
       if (c.effect.type === 'set') return `${who} gioca ${c.title}: ${STAT_NAME[e.stat!]} a ${e.value}`
       return `${who} gioca ${c.title}${e.stat ? ` su ${STAT_NAME[e.stat]}` : ''}`
     }
@@ -403,19 +433,28 @@ function Reveal({ g }: { g: GameState }) {
   const [queue, setQueue] = useState<GameEvent[]>([])
   useEffect(() => {
     const fresh = g.events.filter(
-      (e) => e.seq > seen && (e.kind === 'imprevisto' || e.kind === 'illegal' || (e.kind === 'play' && e.player !== myId.value)),
+      (e) => e.seq > seen && (e.kind === 'imprevisto' || e.kind === 'illegal' || (e.kind === 'play' && (e.player !== myId.value || e.blind))),
     )
     if (fresh.length) setQueue((q) => [...q, ...fresh])
     const last = g.events.at(-1)?.seq
     if (last && last > seen) setSeen(last)
   }, [g.events.at(-1)?.seq])
   const cur = queue[0]
+  // An Imprevisto first breaks its threshold on the CRT (overlay hidden), then its card flips in.
+  const [shown, setShown] = useState(true)
   useEffect(() => {
     if (!cur) return
-    const t = setTimeout(() => setQueue((q) => q.slice(1)), cur.kind === 'imprevisto' ? 3200 : 2200)
-    return () => clearTimeout(t)
+    const staged = cur.kind === 'imprevisto' && !!cur.hits?.length && !calm()
+    setShown(!staged)
+    const timers: ReturnType<typeof setTimeout>[] = []
+    if (staged) {
+      breaking.value = { seq: cur.seq, hits: cur.hits! }
+      timers.push(setTimeout(() => ((breaking.value = null), setShown(true)), BREAK_MS))
+    }
+    timers.push(setTimeout(() => setQueue((q) => q.slice(1)), (staged ? BREAK_MS : 0) + (cur.kind === 'imprevisto' ? 3200 : 2200)))
+    return () => (timers.forEach(clearTimeout), (breaking.value = null))
   }, [cur?.seq])
-  if (!cur) return null
+  if (!cur || !shown) return null
   return (
     <div class={`reveal ${cur.kind}`} key={cur.seq} onClick={() => setQueue((q) => q.slice(1))}>
       {cur.kind === 'imprevisto' && <div class="burst px">IMPREVISTO!</div>}

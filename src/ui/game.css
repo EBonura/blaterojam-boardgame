@@ -279,3 +279,21 @@
 /* Long titles (e.g. Animazione frame-by-frame) step down so they fit in two lines. */
 .card-title.long { font-size: 5.2cqw; }
 .card.compact .card-title.long { font-size: 5.8cqw; }
+
+/* An Imprevisto: the CRT glitches and the crossed threshold's marker shakes, then shatters. */
+.crt.glitch .glass { animation: glitch .45s steps(2) 2; }
+.crt.glitch .glass::after { background: repeating-linear-gradient(transparent 0 2px, rgba(255, 0, 77, .25) 2px 3px); }
+@keyframes glitch { 0% { transform: translate(0); filter: none; } 25% { transform: translate(-3px, 1px) skewX(-2deg); filter: hue-rotate(40deg) saturate(2); }
+  50% { transform: translate(3px, -1px); filter: hue-rotate(-30deg); } 75% { transform: translate(-1px, 2px) skewX(1deg); } 100% { transform: translate(0); } }
+.box.breaking { z-index: 4; animation: alarm .3s ease-in-out 4; box-shadow: 0 0 0 2px var(--red), 0 0 14px var(--red); }
+.box.breaking::before { animation: marker-shake .5s ease-in-out both; }
+@keyframes alarm { 50% { background: rgba(255, 0, 77, .55); } }
+@keyframes marker-shake { 0%, 100% { transform: rotate(45deg); } 20% { transform: rotate(45deg) translate(-2px, 1px) scale(1.6); } 40% { transform: rotate(45deg) translate(2px, -1px) scale(1.6); }
+  60% { transform: rotate(45deg) translate(-2px, -1px) scale(1.8); } 80% { transform: rotate(45deg) translate(1px, 2px) scale(1.8); } }
+.shatter { position: absolute; left: 50%; top: -4px; width: 0; height: 0; pointer-events: none; }
+.shatter b { position: absolute; width: 5px; height: 5px; margin: -2.5px; background: var(--red); box-shadow: 0 0 6px var(--red); opacity: 0; animation: shard .7s .5s cubic-bezier(.2, .8, .4, 1) forwards; }
+.shatter .s1 { --dx: -16px; --dy: -14px; --r: -200deg; } .shatter .s2 { --dx: 16px; --dy: -16px; --r: 220deg; }
+.shatter .s3 { --dx: -12px; --dy: 12px; --r: 160deg; } .shatter .s4 { --dx: 14px; --dy: 10px; --r: -150deg; }
+.box.breaking::before { animation: marker-shake .5s ease-in-out both, vanish .01s .5s forwards; }
+@keyframes vanish { to { opacity: 0; } }
+@keyframes shard { 0% { opacity: 1; transform: translate(0, 0) rotate(45deg); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.4); } }

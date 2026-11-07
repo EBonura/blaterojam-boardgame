@@ -55,6 +55,10 @@ export type GameEvent = {
   card?: string
   stat?: Stat
   value?: number
+  /** On an Imprevisto: the thresholds that set it off, so the board can show them breaking. */
+  hits?: { stat: Stat; t: number }[]
+  /** On a play: the card was picked face down (Blackout). */
+  blind?: boolean
 }
 
 export type GameState = {
@@ -178,11 +182,12 @@ export function applyMove(prev: GameState, m: Move, by: string, connected: Set<s
   g.discard.push(m.card)
   let { stat, value } = m
 
+  const blind = g.blind
   if (g.blind) {
     // Blackout: the card was picked face down. An illegal card does nothing.
     g.blind = false
     if (!isLegal(g, m.card)) {
-      log(g, 'illegal', { card: m.card })
+      log(g, 'illegal', { card: m.card, blind: true })
       return afterPlay(g)
     }
     // Choices on a blind card are random too.
@@ -197,17 +202,17 @@ export function applyMove(prev: GameState, m: Move, by: string, connected: Set<s
   if (e.type === 'set' && (!STATS.includes(stat!) || !Number.isInteger(value) || value! < e.min || value! > e.max)) return null
 
   g.undo = { stats: { ...g.stats }, overflowed: [...g.overflowed] }
-  log(g, 'play', { card: m.card, stat, value })
+  log(g, 'play', { card: m.card, stat, value, ...(blind ? { blind } : {}) })
 
-  let crossed = false
-  if (e.type === 'add') for (const s of STATS) crossed = change(g, s, e.deltas[s] ?? 0, true) || crossed
-  if (e.type === 'choice') crossed = change(g, stat!, e.amount, true)
+  const hits: { stat: Stat; t: number }[] = []
+  if (e.type === 'add') for (const s of STATS) change(g, s, e.deltas[s] ?? 0, hits)
+  if (e.type === 'choice') change(g, stat!, e.amount, hits)
   if (e.type === 'set') g.stats[stat!] = value! // the Jolly never triggers an Imprevisto
 
   if (checkEnd(g)) return g
-  if (crossed && !g.imprevistoThisTurn) {
+  if (hits.length && !g.imprevistoThisTurn) {
     g.imprevistoThisTurn = true
-    resolveImprevisto(g)
+    resolveImprevisto(g, hits)
     if (checkEnd(g)) return g
   }
   return afterPlay(g)
@@ -221,44 +226,44 @@ export function previewPlay(g: GameState, instance: string, stat?: Stat, value?:
   const e = playCard(instance).effect
   if ((e.type === 'choice' || e.type === 'set') && !stat) return null
   const sim: GameState = { ...g, stats: { ...g.stats }, overflowed: [...g.overflowed], events: [] }
-  let crossed = false
-  if (e.type === 'add') for (const s of STATS) crossed = change(sim, s, e.deltas[s] ?? 0, true) || crossed
-  if (e.type === 'choice') crossed = change(sim, stat!, e.amount, true)
+  const hits: { stat: Stat; t: number }[] = []
+  if (e.type === 'add') for (const s of STATS) change(sim, s, e.deltas[s] ?? 0, hits)
+  if (e.type === 'choice') change(sim, stat!, e.amount, hits)
   if (e.type === 'set') sim.stats[stat!] = value ?? 0
   const overflow = sim.events.filter((x) => x.kind === 'overflow').map((x) => x.stat!)
-  return { stats: sim.stats, overflow, imprevisto: crossed && !g.imprevistoThisTurn, wins: isWin(sim) }
+  return { stats: sim.stats, overflow, imprevisto: hits.length > 0 && !g.imprevistoThisTurn, wins: isWin(sim) }
 }
 
 // ---------- internals
 
 /**
  * Applies `d` to one stat. Increases can overflow (20 -> back to 0, leftover
- * points lost); decreases stop at 0. Returns true if an increase reached a
- * critical threshold (7, 11, 13) from below.
+ * points lost); decreases stop at 0. Critical thresholds (7, 11, 13) that an
+ * increase reaches from below are added to `hits`; pass none for effects that
+ * can't set off an Imprevisto.
  */
-function change(g: GameState, s: Stat, d: number, canTrigger: boolean): boolean {
-  if (!d) return false
+function change(g: GameState, s: Stat, d: number, hits?: { stat: Stat; t: number }[]) {
+  if (!d) return
   const old = g.stats[s]
   if (d < 0) {
     g.stats[s] = Math.max(0, old + d)
-    return false
+    return
   }
   const reached = Math.min(old + d, OVERFLOW)
-  const crossed = canTrigger && THRESHOLDS.some((t) => old < t && t <= reached)
+  if (hits) for (const t of THRESHOLDS) if (old < t && t <= reached) hits.push({ stat: s, t })
   if (reached >= OVERFLOW) {
     g.stats[s] = 0
     if (!g.overflowed.includes(s)) g.overflowed.push(s)
     log(g, 'overflow', { stat: s })
   } else g.stats[s] = reached
-  return crossed
 }
 
-function resolveImprevisto(g: GameState) {
+function resolveImprevisto(g: GameState, hits: { stat: Stat; t: number }[]) {
   if (!g.impDeck.length) (g.impDeck = shuffle(g, g.impDiscard)), (g.impDiscard = [])
   const id = g.impDeck.pop()
   if (!id) return
   g.impDiscard.push(id)
-  log(g, 'imprevisto', { card: id })
+  log(g, 'imprevisto', { card: id, hits })
   const e = imprevisto(id).effect
   switch (e.type) {
     case 'reset':
@@ -266,7 +271,7 @@ function resolveImprevisto(g: GameState) {
       break
     case 'add':
       // Imprevisto effects never set off another Imprevisto.
-      for (const s of STATS) change(g, s, e.deltas[s] ?? 0, false)
+      for (const s of STATS) change(g, s, e.deltas[s] ?? 0)
       break
     case 'swap':
       ;[g.stats[e.a], g.stats[e.b]] = [g.stats[e.b], g.stats[e.a]]
