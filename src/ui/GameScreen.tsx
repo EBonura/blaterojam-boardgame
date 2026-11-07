@@ -329,10 +329,10 @@ function Stage({ g, picked, onClose }: { g: GameState; picked: Picked; onClose: 
           </div>
         )}
         <div class="choose-actions">
-          <button class="ghost" onClick={onClose} disabled={leaving}>Annulla</button>
           <button class="primary px" disabled={!ready || leaving} onClick={play}>
             Gioca
           </button>
+          <button class="ghost" onClick={onClose} disabled={leaving}>Annulla</button>
         </div>
       </div>
     </div>
