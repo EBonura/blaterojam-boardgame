@@ -5,16 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node tools/cards/build.mjs && tsc && vite build",
+    "build": "npm run cards -s && tsc && vite build",
     "preview": "vite preview",
     "test:rooms": "node tools/test-rooms.mjs",
-    "cards": "node tools/cards/build.mjs"
+    "cards": "node --experimental-strip-types --no-warnings tools/cards/build.mjs",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",
     "puppeteer-core": "^25.16.0",
     "typescript": "~7.0.2",
-    "vite": "^8.3.6"
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "@preact/signals": "^2.11.4",

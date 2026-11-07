@@ -1,4 +1,4 @@
-// A bug crawling over a code editor. 32x24, PICO-8 palette indexes.
+// A bug crawling over a code editor, patched and patched again. 32x24, PICO-8 palette indexes.
 export default function draw({ rect, px }) {
   // editor window
   rect(2, 2, 28, 20, 0)
@@ -19,4 +19,8 @@ export default function draw({ rect, px }) {
   px(20, 7, 7), px(23, 7, 7) // eyes
   px(19, 6, 6), px(18, 5, 6), px(24, 6, 6), px(25, 5, 6) // antennae
   for (const y of [11, 13, 15]) px(17, y, 6), px(16, y + 1, 6), px(26, y, 6), px(27, y + 1, 6)
+  // band-aids slapped on the bug in an X, and one more on the broken line
+  for (let i = 0; i < 9; i++) rect(17 + i, 8 + i, 2, 1, 15), rect(25 - i, 8 + i, 2, 1, 15)
+  rect(20, 11, 4, 3, 9), px(21, 12, 4), px(22, 12, 4)
+  rect(9, 14, 4, 3, 15), rect(10, 15, 2, 1, 9)
 }

@@ -22,6 +22,8 @@ export type Action =
   | { type: 'leave'; id: string }
   | { type: 'start'; id: string }
   | { type: 'move'; id: string; move: Move }
+  /** Back to the lobby after a game has ended. */
+  | { type: 'restart'; id: string }
 
 export function newRoom(code: string, hostId: string, hostName: string): RoomState {
   return { code, version: 1, phase: 'lobby', players: [{ id: hostId, name: hostName, seat: 0 }], game: null }
@@ -57,9 +59,13 @@ export function reduce(s: RoomState, a: Action, connected: Set<string>): RoomSta
       if (s.players.length < MIN_PLAYERS || s.players.length > MAX_PLAYERS) return null
       return bump({ phase: 'playing', game: newGame(s.players.map((p) => p.id)) })
     }
+    case 'restart': {
+      if (s.phase !== 'playing' || !seated || s.game?.result === 'playing') return null
+      return bump({ phase: 'lobby', game: null })
+    }
     case 'move': {
       if (s.phase !== 'playing' || !s.game || !seated) return null
-      const game = applyMove(s.game, a.move, a.id)
+      const game = applyMove(s.game, a.move, a.id, connected)
       return game ? bump({ game }) : null
     }
   }

@@ -3,7 +3,8 @@ import { t } from '../text'
 import { load, save } from '../storage'
 import { roomState, status, connected, hostPresence, myId, amHost, createRoom, enterRoom, leaveRoom, dispatch } from '../net/session'
 import { hostOf } from '../room/state'
-import { MIN_PLAYERS, MAX_PLAYERS, currentPlayer } from '../game/rules'
+import { MIN_PLAYERS, MAX_PLAYERS } from '../game/rules'
+import { GameScreen } from './GameScreen'
 import { KudaBadge } from './KudaBadge'
 
 export function App() {
@@ -14,7 +15,7 @@ export function App() {
         <span class="brand">BLATERO JAM</span>
       </header>
       <main class="screen">
-        {status.value === 'idle' ? <Home /> : !s ? <Searching /> : s.phase === 'lobby' ? <Lobby /> : <Game />}
+        {status.value === 'idle' ? <Home /> : !s ? <Searching /> : s.phase === 'lobby' ? <Lobby /> : <InGame />}
       </main>
     </div>
   )
@@ -142,30 +143,13 @@ function Lobby() {
   )
 }
 
-// Placeholder game screen until the rules are in: proves turns sync across devices.
-function Game() {
+function InGame() {
   const s = roomState.value!
-  const g = s.game!
   const seated = s.players.some((p) => p.id === myId.value)
-  const turnOf = currentPlayer(g)
-  const turnName = s.players.find((p) => p.id === turnOf)?.name ?? '?'
   return (
-    <section class="game">
-      <RoomCode />
-      <PlayerList />
+    <>
       {!seated && <ClaimSeat />}
-      <div class="turn">
-        <span>{t('turn', { n: g.turn + 1 })}</span>
-        <strong>{turnName}</strong>
-      </div>
-      {turnOf === myId.value && (
-        <button class="primary" onClick={() => dispatch({ type: 'move', id: myId.value, move: { type: 'endTurn' } })}>
-          {t('endTurn')}
-        </button>
-      )}
-      <button class="ghost" onClick={leaveRoom}>
-        {t('leave')}
-      </button>
-    </section>
+      <GameScreen />
+    </>
   )
 }

@@ -1,6 +1,6 @@
 # Blatero Game Jam: The Board Game
 
-A cooperative board game about making a game at a game jam, for 3 to 6 players.
+A cooperative board game about making a game at a game jam, for 4 to 6 players. Rules and the full card list: [docs/regole.md](docs/regole.md).
 
 **Game design: [KUDA Games](#credits).** Digital version made at the Taranto game jam (theme: *anello*).
 
@@ -24,7 +24,7 @@ npm run test:rooms   # 3 simulated phones over the real relays: join, start, hos
 npm run build        # dist/ is what gets zipped for itch.io
 ```
 
-The rules live in `src/game/rules.ts` as a pure `(state, move) => state` function. Room and network code are in `src/room` and `src/net`.
+The rules live in `src/game/rules.ts` as a pure `(state, move) => state` function, tested in `src/game/rules.test.ts` (`npm test`). Card data is `src/cards/cards.json`; card art is pixel art written as code in `tools/cards/art/` (see `tools/cards/ART-BRIEF.md`), and `npm run cards` builds the game art and print-ready SVGs (63x88 mm with 3 mm bleed) into `print/`. Room and network code are in `src/room` and `src/net`.
 
 ## Credits
 
