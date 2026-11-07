@@ -26,14 +26,14 @@ Le statistiche non scendono mai sotto 0.
 2. Ne gioca **una** (obbligatorio), rispettando il Buffer.
 3. L'effetto si applica nell'ordine fisso Game Design, Programmazione, Grafica, Audio. Un Overflow azzera subito quella statistica e si passa alla successiva.
 4. Si controlla la vittoria.
-5. Se un aumento ha raggiunto una soglia critica (7, 11 o 13) partendo da sotto, si rivela **un** Imprevisto.
+5. Se un aumento ha raggiunto una soglia critica (7 o 13) partendo da sotto, si rivela **un** Imprevisto.
 6. La carta giocata va negli scarti; le altre tornano nel mazzo, che si rimescola. Quando il mazzo finisce, si rimescolano gli scarti.
 
 Il primo giocatore è scelto a caso.
 
 ## Imprevisti
 
-- Si attivano solo con gli **aumenti** che raggiungono una soglia (7, 11, 13) da sotto. Le diminuzioni non li attivano.
+- Si attivano solo con gli **aumenti** che raggiungono una soglia (7 o 13) da sotto. Le diminuzioni non li attivano.
 - Al massimo **un** Imprevisto per turno, anche se si attraversano più soglie o più statistiche.
 - Una soglia si può riattivare: se la statistica scende sotto e poi la raggiunge di nuovo.
 - Gli effetti degli Imprevisti non attivano altri Imprevisti.
@@ -44,6 +44,7 @@ Il primo giocatore è scelto a caso.
 
 - **Vittoria:** tutte e quattro le statistiche sono esattamente sui valori della scheda.
 - **Sconfitta:** 3 statistiche diverse sono andate in Overflow durante la partita (anche in turni diversi; la stessa statistica conta una volta).
+- **Sconfitta:** le mosse sono finite. La squadra ha un numero fisso di mosse (turni, contando tutti i giocatori) per completare il gioco: la scadenza della jam.
 
 ## Decisioni prese il 7 novembre 2026
 
@@ -57,6 +58,8 @@ Il primo giocatore è scelto a caso.
 - Crash improvviso: la plancia torna com'era prima dell'ultima carta giocata, Overflow compresi.
 - Minimo 0, nessun underflow.
 - Le carte in mano sono visibili solo al giocatore di turno.
+- Soglie degli Imprevisti: solo 7 e 13 (l'11 è stato tolto).
+- Limite di mosse: la partita è persa quando finiscono le mosse.
 - Imprevisti per statistica: Patch su patch porta Programmazione a 0; Troppi poligoni -10 Grafica; Solo un ritocco -7 Game Design; Audio clipping -5 Audio (prima tutti a 0).
 - Ordine delle statistiche sulla plancia e sulla scheda: Programmazione, Game Design, Grafica, Audio (come nello schizzo della plancia). L'ordine di risoluzione resta Game Design, Programmazione, Grafica, Audio.
 
@@ -117,18 +120,18 @@ Il primo giocatore è scelto a caso.
 
 | Videogioco | Programmazione | Game Design | Grafica | Audio | Totale | Difficoltà |
 |---|---|---|---|---|---|---|
-| Arcade Retrò | 8 | 7 | 5 | 5 | 25 | Facile |
-| Quiz Game | 5 | 10 | 6 | 7 | 28 | Facile |
+| Arcade Retrò | 8 | 6 | 5 | 5 | 24 | Facile |
+| Quiz Game | 4 | 10 | 6 | 7 | 27 | Facile |
 | Visual Novel | 4 | 11 | 10 | 7 | 32 | Medio |
-| Puzzle Game | 11 | 12 | 7 | 5 | 35 | Medio |
+| Puzzle Game | 11 | 12 | 7 | 4 | 34 | Medio |
 | Roguelike | 12 | 11 | 8 | 6 | 37 | Medio |
-| Platform 2D | 11 | 12 | 11 | 6 | 40 | Difficile |
+| Platform 2D | 11 | 14 | 11 | 6 | 42 | Difficile |
 | Gestionale | 13 | 13 | 9 | 6 | 41 | Difficile |
 | Rhythm Game | 10 | 9 | 10 | 14 | 43 | Difficile |
-| Racing Game | 13 | 9 | 13 | 10 | 45 | Difficile |
-| Monster Collector | 13 | 14 | 11 | 9 | 47 | Molto difficile |
-| Tower Defense | 14 | 14 | 11 | 9 | 48 | Molto difficile |
-| FPS Multiplayer | 15 | 13 | 13 | 11 | 52 | Molto difficile |
-| Survival Horror 3D | 12 | 12 | 14 | 15 | 53 | Molto difficile |
-| MMORPG | 15 | 15 | 13 | 12 | 55 | Estremo |
-| Open World RPG | 15 | 15 | 15 | 15 | 60 | Estremo |
+| Racing Game | 12 | 9 | 11 | 10 | 42 | Difficile |
+| Monster Collector | 13 | 14 | 12 | 8 | 47 | Molto difficile |
+| Tower Defense | 13 | 13 | 12 | 9 | 47 | Molto difficile |
+| FPS Multiplayer | 15 | 13 | 12 | 11 | 51 | Molto difficile |
+| Survival Horror 3D | 13 | 12 | 14 | 15 | 54 | Molto difficile |
+| MMORPG | 15 | 14 | 13 | 12 | 54 | Estremo |
+| Open World RPG | 15 | 14 | 15 | 14 | 58 | Estremo |

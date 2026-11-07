@@ -7,13 +7,16 @@ export type Stat = 'gd' | 'prog' | 'graf' | 'audio'
 /** Resolution order is fixed: Game Design, Programmazione, Grafica, Audio. */
 export const STATS: Stat[] = ['gd', 'prog', 'graf', 'audio']
 export const STAT_NAME: Record<Stat, string> = { gd: 'Game Design', prog: 'Programmazione', graf: 'Grafica', audio: 'Audio' }
-export const THRESHOLDS = [7, 11, 13]
+/** Imprevisto thresholds (two since 7 Nov; 11 was dropped). */
+export const THRESHOLDS = [7, 13]
 export const BUFFER_MIN = 16
 export const OVERFLOW = 20
 export const MIN_PLAYERS = 4
 export const MAX_PLAYERS = 6
 /** The team loses once this many different stats have overflowed during the game. */
 export const LOSS_OVERFLOWS = 3
+/** The jam's deadline: the team has this many moves (turns, across all players) to finish the game. 48, like the 48 hours of a jam. */
+export const MOVE_LIMIT = 48
 export const JOLLY_MAX = 15
 
 type Deltas = Partial<Record<Stat, number>>
@@ -51,7 +54,7 @@ export type GameEvent = {
   seq: number
   turn: number
   player: string
-  kind: 'turn' | 'play' | 'illegal' | 'overflow' | 'imprevisto' | 'redraw' | 'pass' | 'skip' | 'won' | 'lost'
+  kind: 'turn' | 'play' | 'illegal' | 'overflow' | 'imprevisto' | 'redraw' | 'pass' | 'skip' | 'won' | 'lost' | 'deadline'
   card?: string
   stat?: Stat
   value?: number
@@ -84,6 +87,8 @@ export type GameState = {
   next: { skip?: boolean; drawTwo?: boolean; playTwo?: boolean; blind?: boolean }
   /** Board before the last played card, for "Crash improvviso". */
   undo: { stats: Record<Stat, number>; overflowed: Stat[] } | null
+  /** Moves the team has before the jam ends (games saved before the limit existed have none). */
+  limit?: number
   result: 'playing' | 'won' | 'lost'
   events: GameEvent[]
 }
@@ -143,6 +148,7 @@ export function newGame(playerIds: string[], seed = (Math.random() * 2 ** 32) | 
     imprevistoThisTurn: false,
     next: {},
     undo: null,
+    limit: MOVE_LIMIT,
     result: 'playing',
     events: [],
   }
@@ -240,7 +246,7 @@ export function previewPlay(g: GameState, instance: string, stat?: Stat, value?:
 
 /**
  * Applies `d` to one stat. Increases can overflow (20 -> back to 0, leftover
- * points lost); decreases stop at 0. Critical thresholds (7, 11, 13) that an
+ * points lost); decreases stop at 0. Critical thresholds (7, 13) that an
  * increase reaches from below are added to `hits`; pass none for effects that
  * can't set off an Imprevisto.
  */
@@ -346,6 +352,12 @@ function endTurn(g: GameState) {
 function startTurn(g: GameState) {
   // Passing turns can chain (skip, then a pass); bound it so a stuck table can't loop forever.
   for (let guard = 0; guard < g.order.length * 3; guard++) {
+    // Out of moves: the jam is over and the game wasn't finished.
+    if (g.limit && g.turn >= g.limit) {
+      g.result = 'lost'
+      log(g, 'deadline')
+      return
+    }
     g.imprevistoThisTurn = false
     g.blind = false
     g.toPlay = 1

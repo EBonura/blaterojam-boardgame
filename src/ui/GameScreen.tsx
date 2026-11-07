@@ -113,8 +113,10 @@ function Tape({ g }: { g: GameState }) {
             <div class="lt-sub">Scheda videogioco · {sh.difficulty}</div>
           </div>
           <div class="counter">
-            <span>Turno</span>
-            <b key={g.turn} class="px">{String(g.turn + 1).padStart(3, '0')}</b>
+            <span>{g.limit ? 'Mosse' : 'Turno'}</span>
+            <b key={g.turn} class={`px ${g.limit && g.limit - g.turn <= 5 ? 'low' : ''}`}>
+              {g.limit ? `${Math.min(g.turn + 1, g.limit)}/${g.limit}` : String(g.turn + 1).padStart(3, '0')}
+            </b>
           </div>
         </div>
         <div class="deck">
@@ -170,7 +172,7 @@ function Crt({ g, preview }: { g: GameState; preview: Preview | null }) {
             breakPhase={breaking.value?.phase} />
         ))}
         <div class="scale px" aria-hidden="true">
-          {[0, 7, 11, 13, 15, 20].map((n) => (
+          {[0, ...THRESHOLDS, 15, 20].map((n) => (
             <span style={{ gridColumn: Math.max(1, n) }} class={n === 0 ? 'zero' : ''}>{n}</span>
           ))}
         </div>
@@ -426,6 +428,7 @@ function describe(e: GameEvent): string | null {
     case 'skip': return `${who} salta il turno`
     case 'won': return 'Gioco completato!'
     case 'lost': return 'Troppi overflow: il gioco è perso'
+    case 'deadline': return 'Mosse finite: la jam è chiusa'
     default: return null
   }
 }
@@ -514,7 +517,13 @@ function EndScreen({ g }: { g: GameState }) {
         </div>
       )}
       <h2 class="px">{won ? 'Gioco completato!' : 'Game over'}</h2>
-      <p>{won ? `${sheetOf(g).title} è pronto per la consegna.` : `${LOSS_OVERFLOWS} statistiche sono andate in overflow.`}</p>
+      <p>
+        {won
+          ? `${sheetOf(g).title} è pronto per la consegna.`
+          : g.events.some((e) => e.kind === 'deadline')
+            ? `Mosse finite: la jam è chiusa e ${sheetOf(g).title} non è pronto.`
+            : `${LOSS_OVERFLOWS} statistiche sono andate in overflow.`}
+      </p>
       <button class="primary" onClick={() => dispatch({ type: 'restart', id: myId.value })}>Nuova partita</button>
       <button class="ghost" onClick={leaveRoom}>Torna al menu</button>
     </div>

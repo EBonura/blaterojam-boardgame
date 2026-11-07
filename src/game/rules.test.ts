@@ -1,5 +1,16 @@
-import { describe, it, expect } from 'vitest'
-import { newGame, applyMove, currentPlayer, inBuffer, type GameState, type Move } from './rules'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { SHEET_BY_ID, newGame, applyMove, currentPlayer, inBuffer, type GameState, type Move } from './rules'
+
+// These tests check the rules, not the balance: pin Gestionale's targets so retuning the
+// game sheets (src/cards/cards.json) doesn't change what the tests expect.
+const PINNED = { gd: 13, prog: 13, graf: 9, audio: 6 }
+let realTargets: typeof PINNED
+beforeAll(() => {
+  const s = SHEET_BY_ID.get('gestionale')!
+  realTargets = s.target
+  s.target = PINNED
+})
+afterAll(() => void (SHEET_BY_ID.get('gestionale')!.target = realTargets))
 
 const P = ['a', 'b', 'c', 'd']
 const ALL = new Set(P)
@@ -98,8 +109,8 @@ describe('imprevisti', () => {
   })
 
   it('reveals only one per turn even across several thresholds and stats', () => {
-    const g = game({ stats: { gd: 6, prog: 5, graf: 6, audio: 6 }, hand: ['spaghetti-code#1'], impDeck: ['merge-conflict', 'cambio-idea'] })
-    const n = play(g, { type: 'play', card: 'spaghetti-code#1' })! // prog 5 -> 11 crosses 7 and 11
+    const g = game({ stats: { gd: 6, prog: 0, graf: 12, audio: 0 }, hand: ['brainstorming#1'], impDeck: ['merge-conflict', 'cambio-idea'] })
+    const n = play(g, { type: 'play', card: 'brainstorming#1' })! // gd 6 -> 7 and graf 12 -> 13: two thresholds
     expect(after(g, n).filter((e) => e.kind === 'imprevisto')).toHaveLength(1)
   })
 
@@ -231,9 +242,9 @@ describe('preview', () => {
 
 describe('events for the board animations', () => {
   it('records which thresholds set off the Imprevisto', () => {
-    const g = game({ stats: { gd: 0, prog: 5, graf: 0, audio: 0 }, hand: ['spaghetti-code#1'], impDeck: ['divergenze-creative'] })
-    const n = play(g, { type: 'play', card: 'spaghetti-code#1' })! // prog 5 -> 11 crosses 7 and 11
-    expect(n.events.find((e) => e.kind === 'imprevisto')?.hits).toEqual([{ stat: 'prog', t: 7 }, { stat: 'prog', t: 11 }])
+    const g = game({ stats: { gd: 6, prog: 0, graf: 12, audio: 0 }, hand: ['brainstorming#1'], impDeck: ['divergenze-creative'] })
+    const n = play(g, { type: 'play', card: 'brainstorming#1' })! // gd 6 -> 7, graf 12 -> 13
+    expect(n.events.find((e) => e.kind === 'imprevisto')?.hits).toEqual([{ stat: 'gd', t: 7 }, { stat: 'graf', t: 13 }])
   })
   it('marks a face-down play', () => {
     const g = game({ blind: true, hand: ['caffe#1'] })
@@ -250,15 +261,15 @@ describe('only going up sets off an Imprevisto', () => {
     expect(kinds(n)).not.toContain('imprevisto')
   })
   it('a mixed card only counts the stats that go up', () => {
-    // Sprite 3D: +2 Grafica, -1 Game Design. gd 12 -> 11 lands on a threshold going down; graf 2 -> 4 crosses nothing.
-    const g = game({ stats: { gd: 12, prog: 0, graf: 2, audio: 0 }, hand: ['sprite-3d#1'], impDeck: ['merge-conflict'] })
+    // Sprite 3D: +2 Grafica, -1 Game Design. gd 14 -> 13 lands on a threshold going down; graf 2 -> 4 crosses nothing.
+    const g = game({ stats: { gd: 14, prog: 0, graf: 2, audio: 0 }, hand: ['sprite-3d#1'], impDeck: ['merge-conflict'] })
     const n = play(g, { type: 'play', card: 'sprite-3d#1' })!
-    expect(n.stats).toMatchObject({ gd: 11, graf: 4 })
+    expect(n.stats).toMatchObject({ gd: 13, graf: 4 })
     expect(kinds(n)).not.toContain('imprevisto')
   })
   it('the Jolly moving a stat onto a threshold does not', () => {
     const g = game({ stats: { gd: 3, prog: 0, graf: 0, audio: 0 }, hand: ['blatero#1'], impDeck: ['merge-conflict'] })
-    expect(kinds(play(g, { type: 'play', card: 'blatero#1', stat: 'gd', value: 11 })!)).not.toContain('imprevisto')
+    expect(kinds(play(g, { type: 'play', card: 'blatero#1', stat: 'gd', value: 13 })!)).not.toContain('imprevisto')
   })
 })
 
@@ -268,5 +279,21 @@ describe('imprevisto event', () => {
     const n = play(g, { type: 'play', card: 'programmatore#1' })!
     expect(n.events.find((e) => e.kind === 'imprevisto')?.before).toMatchObject({ prog: 8 })
     expect(n.stats.prog).toBe(2)
+  })
+})
+
+describe('move limit', () => {
+  it('the team loses when the moves run out', () => {
+    const g = game({ limit: 2, hand: ['caffe#1'] })
+    let n = play(g, { type: 'play', card: 'caffe#1', stat: 'audio' })!
+    expect(n.result).toBe('playing')
+    n.hand = ['caffe#2']
+    n = play(n, { type: 'play', card: 'caffe#2', stat: 'audio' })!
+    expect(n.result).toBe('lost')
+    expect(kinds(n)).toContain('deadline')
+  })
+  it('a win on the last move still counts', () => {
+    const g = game({ limit: 1, stats: { gd: 13, prog: 11, graf: 9, audio: 6 }, hand: ['autocompletamento#1'] })
+    expect(play(g, { type: 'play', card: 'autocompletamento#1' })!.result).toBe('won')
   })
 })

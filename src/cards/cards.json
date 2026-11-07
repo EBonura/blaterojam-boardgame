@@ -68,20 +68,20 @@
     { "id": "brainstorming-infinito", "title": "Brainstorming infinito", "effect": { "type": "setAll", "value": 16 }, "text": "Tutte le statistiche vanno a 16" }
   ],
   "sheets": [
-    { "id": "arcade-retro", "title": "Arcade Retrò", "difficulty": "Facile", "target": { "gd": 7, "prog": 8, "graf": 5, "audio": 5 } },
-    { "id": "quiz-game", "title": "Quiz Game", "difficulty": "Facile", "target": { "gd": 10, "prog": 5, "graf": 6, "audio": 7 } },
+    { "id": "arcade-retro", "title": "Arcade Retrò", "difficulty": "Facile", "target": { "gd": 6, "prog": 8, "graf": 5, "audio": 5 } },
+    { "id": "quiz-game", "title": "Quiz Game", "difficulty": "Facile", "target": { "gd": 10, "prog": 4, "graf": 6, "audio": 7 } },
     { "id": "visual-novel", "title": "Visual Novel", "difficulty": "Medio", "target": { "gd": 11, "prog": 4, "graf": 10, "audio": 7 } },
-    { "id": "puzzle-game", "title": "Puzzle Game", "difficulty": "Medio", "target": { "gd": 12, "prog": 11, "graf": 7, "audio": 5 } },
+    { "id": "puzzle-game", "title": "Puzzle Game", "difficulty": "Medio", "target": { "gd": 12, "prog": 11, "graf": 7, "audio": 4 } },
     { "id": "roguelike", "title": "Roguelike", "difficulty": "Medio", "target": { "gd": 11, "prog": 12, "graf": 8, "audio": 6 } },
-    { "id": "platform-2d", "title": "Platform 2D", "difficulty": "Difficile", "target": { "gd": 12, "prog": 11, "graf": 11, "audio": 6 } },
+    { "id": "platform-2d", "title": "Platform 2D", "difficulty": "Difficile", "target": { "gd": 14, "prog": 11, "graf": 11, "audio": 6 } },
     { "id": "gestionale", "title": "Gestionale", "difficulty": "Difficile", "target": { "gd": 13, "prog": 13, "graf": 9, "audio": 6 } },
     { "id": "rhythm-game", "title": "Rhythm Game", "difficulty": "Difficile", "target": { "gd": 9, "prog": 10, "graf": 10, "audio": 14 } },
-    { "id": "racing-game", "title": "Racing Game", "difficulty": "Difficile", "target": { "gd": 9, "prog": 13, "graf": 13, "audio": 10 } },
-    { "id": "monster-collector", "title": "Monster Collector", "difficulty": "Molto difficile", "target": { "gd": 14, "prog": 13, "graf": 11, "audio": 9 } },
-    { "id": "tower-defense", "title": "Tower Defense", "difficulty": "Molto difficile", "target": { "gd": 14, "prog": 14, "graf": 11, "audio": 9 } },
-    { "id": "fps-multiplayer", "title": "FPS Multiplayer", "difficulty": "Molto difficile", "target": { "gd": 13, "prog": 15, "graf": 13, "audio": 11 } },
-    { "id": "survival-horror-3d", "title": "Survival Horror 3D", "difficulty": "Molto difficile", "target": { "gd": 12, "prog": 12, "graf": 14, "audio": 15 } },
-    { "id": "mmorpg", "title": "MMORPG", "difficulty": "Estremo", "target": { "gd": 15, "prog": 15, "graf": 13, "audio": 12 } },
-    { "id": "open-world-rpg", "title": "Open World RPG", "difficulty": "Estremo", "target": { "gd": 15, "prog": 15, "graf": 15, "audio": 15 } }
+    { "id": "racing-game", "title": "Racing Game", "difficulty": "Difficile", "target": { "gd": 9, "prog": 12, "graf": 11, "audio": 10 } },
+    { "id": "monster-collector", "title": "Monster Collector", "difficulty": "Molto difficile", "target": { "gd": 14, "prog": 13, "graf": 12, "audio": 8 } },
+    { "id": "tower-defense", "title": "Tower Defense", "difficulty": "Molto difficile", "target": { "gd": 13, "prog": 13, "graf": 12, "audio": 9 } },
+    { "id": "fps-multiplayer", "title": "FPS Multiplayer", "difficulty": "Molto difficile", "target": { "gd": 13, "prog": 15, "graf": 12, "audio": 11 } },
+    { "id": "survival-horror-3d", "title": "Survival Horror 3D", "difficulty": "Molto difficile", "target": { "gd": 12, "prog": 13, "graf": 14, "audio": 15 } },
+    { "id": "mmorpg", "title": "MMORPG", "difficulty": "Estremo", "target": { "gd": 14, "prog": 15, "graf": 13, "audio": 12 } },
+    { "id": "open-world-rpg", "title": "Open World RPG", "difficulty": "Estremo", "target": { "gd": 14, "prog": 15, "graf": 15, "audio": 14 } }
   ]
 }

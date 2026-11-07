@@ -1,6 +1,17 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { chooseMove } from './cpu'
-import { newGame, applyMove, currentPlayer, isLegal, inBuffer, type GameState, type Move } from './rules'
+import { SHEET_BY_ID, newGame, applyMove, currentPlayer, isLegal, inBuffer, type GameState, type Move } from './rules'
+
+// These tests check the rules, not the balance: pin Gestionale's targets so retuning the
+// game sheets (src/cards/cards.json) doesn't change what the tests expect.
+const PINNED = { gd: 13, prog: 13, graf: 9, audio: 6 }
+let realTargets: typeof PINNED
+beforeAll(() => {
+  const s = SHEET_BY_ID.get('gestionale')!
+  realTargets = s.target
+  s.target = PINNED
+})
+afterAll(() => void (SHEET_BY_ID.get('gestionale')!.target = realTargets))
 
 const P = ['a', 'b', 'c', 'd']
 const ALL = new Set(P)

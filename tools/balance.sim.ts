@@ -13,7 +13,7 @@ const ALL = new Set(PLAYERS)
 const MAX_TURNS = 400
 const GAMES_PER_SHEET = Number(process.env.GAMES ?? 400)
 
-type Result = { result: 'won' | 'lost' | 'stuck'; turns: number; imprevisti: number; overflows: number; passes: number; bufferTurns: number }
+type Result = { result: 'won' | 'lost' | 'stuck'; turns: number; imprevisti: number; overflows: number; passes: number; bufferTurns: number; deadline: boolean }
 
 /** A player who plays a random legal card, with random choices. */
 function randomMove(g: GameState, rnd: () => number): Move {
@@ -38,7 +38,7 @@ function playGame(seed: number, sheet: string, strategy: 'cpu' | 'random'): Resu
   let g = newGame(PLAYERS, seed, sheet)
   const rnd = mulberry(seed ^ 0x9e3779b9)
   let lastSeq = 0
-  const r: Result = { result: 'stuck', turns: 0, imprevisti: 0, overflows: 0, passes: 0, bufferTurns: 0 }
+  const r: Result = { result: 'stuck', turns: 0, imprevisti: 0, overflows: 0, passes: 0, bufferTurns: 0, deadline: false }
   for (let guard = 0; guard < MAX_TURNS * 3 && g.result === 'playing' && g.turn < MAX_TURNS; guard++) {
     const who = currentPlayer(g)
     const move = strategy === 'cpu' ? chooseMove(g) : randomMove(g, rnd)
@@ -50,6 +50,7 @@ function playGame(seed: number, sheet: string, strategy: 'cpu' | 'random'): Resu
       if (e.kind === 'imprevisto') r.imprevisti++
       if (e.kind === 'overflow') r.overflows++
       if (e.kind === 'pass' || e.kind === 'redraw') r.passes++
+      if (e.kind === 'deadline') r.deadline = true
     }
     lastSeq = g.events.at(-1)?.seq ?? lastSeq
   }
@@ -72,6 +73,7 @@ function summarise(results: Result[]) {
     winRate: won.length / n,
     lossRate: lost.length / n,
     stuckRate: stuck.length / n,
+    deadlineRate: results.filter((x) => x.deadline).length / n,
     avgTurnsToWin: avg(turns),
     medianTurnsToWin: q(0.5),
     p10TurnsToWin: q(0.1),

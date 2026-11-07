@@ -324,3 +324,6 @@
 @keyframes alert-in-flat { from { transform: scale(.3); opacity: 0; } }
 .reveal.imprevisto { background: rgba(14, 6, 18, .9); }
 .reveal.imprevisto .rv-caption { color: var(--cream); }
+
+/* The move counter turns red in the last five moves of the jam. */
+.counter b.low { background: #f6c4c4; color: #a3122a; border-color: #a3122a; animation: roll .45s ease, blink .8s steps(2) infinite; }
