@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
-import { signal } from '@preact/signals'
+import { breaking, shownSeq, revealBusy, WARN_MS, BREAK_MS, IMPREVISTO_HOLD_MS, PLAY_HOLD_MS, SETTLE_MS } from './pace'
 import { roomState, connected, myId, dispatch, leaveRoom } from '../net/session'
 import { t } from '../text'
 import { DISPLAY_ORDER, STAT_SHORT } from '../cards/effects'
@@ -19,9 +19,6 @@ const here = () => present(roomState.value!, connected.value)
 const cpu = (id: string) => isCpu(roomState.value!, id)
 const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
-/** Thresholds breaking on the CRT right now (set by Reveal just before an Imprevisto card shows). */
-const breaking = signal<{ seq: number; hits: { stat: Stat; t: number }[] } | null>(null)
-const BREAK_MS = 1200
 
 /** Flies a card element into the CRT, then calls `done`. */
 function flyIntoCrt(el: HTMLElement, done: () => void, wobble = false) {
@@ -50,6 +47,7 @@ type Picked = { card: string; from: DOMRect }
 
 export function GameScreen() {
   const g = roomState.value!.game!
+  useState(() => (shownSeq.value = g.events.at(-1)?.seq ?? 0))
   const [picked, setPicked] = useState<Picked | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
   // A new hand (or a new turn) drops any card that was being looked at.
@@ -144,18 +142,32 @@ function usePrevious<T>(v: T): T {
 /** The board: a CRT with one bar of 20 boxes per stat that light up as the stat grows. */
 function Crt({ g, preview }: { g: GameState; preview: Preview | null }) {
   const target = sheetOf(g).target
-  const prev = usePrevious(g.stats)
+  // Until its sequence has been shown, an Imprevisto's effect isn't on the board yet.
+  const held = g.events.find((e) => e.kind === 'imprevisto' && e.seq > shownSeq.value && e.before)
+  const stats = held?.before ?? g.stats
+  const prev = usePrevious(stats)
   const lastSeq = g.events.at(-1)?.seq ?? 0
   const prevSeq = usePrevious(lastSeq)
   // Rows that overflowed in the latest events flash red.
   const flashed = new Set(g.events.filter((e) => e.seq > prevSeq && e.kind === 'overflow').map((e) => e.stat))
   return (
-    <div class={`crt ${inBuffer(g) ? 'buffer' : ''} ${preview ? 'previewing' : ''} ${breaking.value ? 'glitch' : ''}`}>
+    <div class={`crt ${inBuffer(g) ? 'buffer' : ''} ${preview ? 'previewing' : ''} ${breaking.value?.phase === 'break' ? 'glitch' : ''} ${breaking.value ? 'alarm' : ''}`}>
+      {breaking.value && (
+        <div class="crt-alert" key={breaking.value.seq} role="alert">
+          <b class="px">Soglia superata!</b>
+          {breaking.value.hits.map((h) => (
+            <span>
+              {STAT_NAME[h.stat]} · {h.t}
+            </span>
+          ))}
+        </div>
+      )}
       <div class="glass">
         {DISPLAY_ORDER.map((st) => (
-          <Bar key={st} st={st} v={g.stats[st]} from={prev[st]} t={target[st]} lost={g.overflowed.includes(st)} flash={flashed.has(st)}
-            next={preview ? preview.stats[st] : g.stats[st]} boom={!!preview?.overflow.includes(st)}
-            breaks={breaking.value?.hits.filter((h) => h.stat === st).map((h) => h.t) ?? []} breakKey={breaking.value?.seq ?? 0} />
+          <Bar key={st} st={st} v={stats[st]} from={prev[st]} t={target[st]} lost={g.overflowed.includes(st)} flash={flashed.has(st)}
+            next={preview ? preview.stats[st] : stats[st]} boom={!!preview?.overflow.includes(st)}
+            breaks={breaking.value?.hits.filter((h) => h.stat === st).map((h) => h.t) ?? []} breakKey={breaking.value?.seq ?? 0}
+            breakPhase={breaking.value?.phase} />
         ))}
         <div class="scale px" aria-hidden="true">
           {[0, 7, 11, 13, 15, 20].map((n) => (
@@ -175,7 +187,7 @@ function Crt({ g, preview }: { g: GameState; preview: Preview | null }) {
 }
 
 /** One stat. `next`/`boom` preview the card on centre stage: ghost boxes it would fill, boxes it would empty, an overflow. */
-function Bar({ st, v, from, t, lost, flash, next, boom, breaks, breakKey }: { st: Stat; v: number; from: number; t: number; lost: boolean; flash: boolean; next: number; boom: boolean; breaks: number[]; breakKey: number }) {
+function Bar({ st, v, from, t, lost, flash, next, boom, breaks, breakKey, breakPhase }: { st: Stat; v: number; from: number; t: number; lost: boolean; flash: boolean; next: number; boom: boolean; breaks: number[]; breakKey: number; breakPhase?: 'warn' | 'break' }) {
   // Remount the boxes when the value changes, so the fill and drain animations replay.
   const [gen, setGen] = useState(0)
   const [last, setLast] = useState({ from: v, to: v })
@@ -183,7 +195,7 @@ function Bar({ st, v, from, t, lost, flash, next, boom, breaks, breakKey }: { st
     if (from !== v) (setLast({ from, to: v }), setGen((n) => n + 1))
   }, [v])
   return (
-    <div class={`bar t-${st} ${v === t ? 'ok' : ''} ${flash ? 'flash' : ''} ${boom ? 'boom' : ''} ${next !== v && !boom && next === t ? 'will-ok' : ''}`}
+    <div class={`bar t-${st} ${v === t ? 'ok' : ''} ${flash ? 'flash' : ''} ${boom ? 'boom' : ''} ${next !== v && !boom && next === t ? 'will-ok' : ''} ${breaks.length ? 'alert' : ''}`}
       aria-label={`${STAT_NAME[st]} ${v}${next !== v ? `, diventerebbe ${next}` : ''}, obiettivo ${t}`}>
       <span class="bar-name">
         {STAT_NAME[st]}
@@ -211,11 +223,11 @@ function Bar({ st, v, from, t, lost, flash, next, boom, breaks, breakKey }: { st
                 !boom && next > v && k > v && k <= next && 'ghost',
                 ((!boom && next < v && k > next && k <= v) || (boom && on)) && 'lose',
                 boom && k === OVERFLOW && 'blast',
-                breaks.includes(k) && 'breaking',
+                breaks.includes(k) && (breakPhase === 'break' ? 'breaking' : 'warning'),
               ].filter(Boolean).join(' ')}
-              style={step ? { animationDelay: `${step * 45}ms` } : undefined}
+              style={step ? { animationDelay: `${step * 70}ms` } : undefined}
             >
-              {breaks.includes(k) && (
+              {breaks.includes(k) && breakPhase === 'break' && (
                 <span class="shatter" key={`${breakKey}-${k}`} aria-hidden="true">
                   <b class="s1" /><b class="s2" /><b class="s3" /><b class="s4" />
                 </span>
@@ -427,7 +439,11 @@ function EventLog({ g }: { g: GameState }) {
   )
 }
 
-/** Shows each played card and Imprevisto big for a moment, to everyone (your own plays you have just seen). */
+/**
+ * Shows each played card big for a moment, to everyone (your own plays you have just seen).
+ * An Imprevisto is a sequence: the crossed threshold warns on the CRT, then breaks, then the
+ * Imprevisto card shows until tapped, and only then does its effect reach the board.
+ */
 function Reveal({ g }: { g: GameState }) {
   const [seen, setSeen] = useState(() => g.events.at(-1)?.seq ?? 0)
   const [queue, setQueue] = useState<GameEvent[]>([])
@@ -440,29 +456,43 @@ function Reveal({ g }: { g: GameState }) {
     if (last && last > seen) setSeen(last)
   }, [g.events.at(-1)?.seq])
   const cur = queue[0]
-  // An Imprevisto first breaks its threshold on the CRT (overlay hidden), then its card flips in.
-  const [shown, setShown] = useState(true)
+  const [step, setStep] = useState<'warn' | 'break' | 'card'>('card')
+  const next = () => {
+    if (cur?.kind === 'imprevisto') shownSeq.value = Math.max(shownSeq.value, cur.seq)
+    setQueue((q) => q.slice(1))
+  }
   useEffect(() => {
     if (!cur) return
     const staged = cur.kind === 'imprevisto' && !!cur.hits?.length && !calm()
-    setShown(!staged)
     const timers: ReturnType<typeof setTimeout>[] = []
+    const at = (ms: number, f: () => void) => timers.push(setTimeout(f, ms))
     if (staged) {
-      breaking.value = { seq: cur.seq, hits: cur.hits! }
-      timers.push(setTimeout(() => ((breaking.value = null), setShown(true)), BREAK_MS))
-    }
-    timers.push(setTimeout(() => setQueue((q) => q.slice(1)), (staged ? BREAK_MS : 0) + (cur.kind === 'imprevisto' ? 3200 : 2200)))
+      setStep('warn')
+      breaking.value = { seq: cur.seq, hits: cur.hits!, phase: 'warn' }
+      at(WARN_MS, () => (breaking.value = { seq: cur.seq, hits: cur.hits!, phase: 'break' }))
+      at(WARN_MS + BREAK_MS, () => ((breaking.value = null), setStep('card')))
+    } else setStep('card')
+    const hold = cur.kind === 'imprevisto' ? IMPREVISTO_HOLD_MS : PLAY_HOLD_MS
+    at((staged ? WARN_MS + BREAK_MS : 0) + hold, next)
     return () => (timers.forEach(clearTimeout), (breaking.value = null))
   }, [cur?.seq])
-  if (!cur || !shown) return null
+  // CPUs wait while something is being shown, and a moment after so the bars can settle.
+  useEffect(() => {
+    if (cur) return void (revealBusy.value = true)
+    const t = setTimeout(() => (revealBusy.value = false), SETTLE_MS)
+    return () => clearTimeout(t)
+  }, [!!cur])
+  useEffect(() => () => void (revealBusy.value = false), [])
+  if (!cur || step !== 'card') return null
+  const imp = cur.kind === 'imprevisto'
   return (
-    <div class={`reveal ${cur.kind}`} key={cur.seq} onClick={() => setQueue((q) => q.slice(1))}>
-      {cur.kind === 'imprevisto' && <div class="burst px">IMPREVISTO!</div>}
+    <div class={`reveal ${cur.kind}`} key={cur.seq} onClick={next}>
+      {imp && <div class="burst px">IMPREVISTO!</div>}
       <div class="rv-caption">{describe(cur)}</div>
       <div class="rv-card">
-        <Card card={cur.card!} kind={cur.kind === 'imprevisto' ? 'imprevisto' : 'play'} />
+        <Card card={cur.card!} kind={imp ? 'imprevisto' : 'play'} />
       </div>
-      <div class="hint">Tocca per continuare</div>
+      <div class="hint">{imp ? 'Tocca per applicarlo' : 'Tocca per continuare'}</div>
     </div>
   )
 }

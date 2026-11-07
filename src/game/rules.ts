@@ -59,6 +59,8 @@ export type GameEvent = {
   hits?: { stat: Stat; t: number }[]
   /** On a play: the card was picked face down (Blackout). */
   blind?: boolean
+  /** On an Imprevisto: the board after the card, before the Imprevisto changed it. */
+  before?: Record<Stat, number>
 }
 
 export type GameState = {
@@ -263,7 +265,7 @@ function resolveImprevisto(g: GameState, hits: { stat: Stat; t: number }[]) {
   const id = g.impDeck.pop()
   if (!id) return
   g.impDiscard.push(id)
-  log(g, 'imprevisto', { card: id, hits })
+  log(g, 'imprevisto', { card: id, hits, before: { ...g.stats } })
   const e = imprevisto(id).effect
   switch (e.type) {
     case 'reset':

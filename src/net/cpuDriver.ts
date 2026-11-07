@@ -9,25 +9,16 @@ import { roomState, amHost, dispatch } from './session'
 import { isCpu } from '../room/state'
 import { chooseMove } from '../game/cpu'
 import { currentPlayer, isLegal, type Move } from '../game/rules'
-
-/** Pause before a CPU plays, so the people at the table can follow (tools/test-cpu.mjs shortens 1500 and 3000 ms timers). */
-const DELAY_MS = 1500
-/** An Imprevisto stays on screen longer than a card, so give it time. */
-const AFTER_IMPREVISTO_MS = 1500
+import { revealBusy, CPU_DELAY_MS } from '../ui/pace'
 
 let timer: ReturnType<typeof setTimeout> | undefined
 let plannedFor = -1
-let seenSeq = Infinity
 
 export function startCpuDriver() {
   effect(() => {
     const s = roomState.value
     const host = amHost.value
     const g = s?.game
-    // Did the last thing that happened reveal an Imprevisto?
-    const lastSeq = g?.events.at(-1)?.seq ?? 0
-    const imprevisto = !!g?.events.some((e) => e.seq > seenSeq && e.kind === 'imprevisto')
-    seenSeq = lastSeq
     const due = !!s && host && s.phase === 'playing' && !!g && g.result === 'playing' && isCpu(s, currentPlayer(g))
     if (!due) {
       clearTimeout(timer)
@@ -38,7 +29,7 @@ export function startCpuDriver() {
     clearTimeout(timer)
     plannedFor = s.version
     const version = s.version
-    timer = setTimeout(() => play(version), DELAY_MS + (imprevisto ? AFTER_IMPREVISTO_MS : 0))
+    timer = setTimeout(() => play(version), CPU_DELAY_MS)
   })
 }
 
@@ -48,6 +39,8 @@ function play(version: number) {
   if (!s || !g || s.version !== version || !amHost.value || g.result !== 'playing') return
   const cpu = currentPlayer(g)
   if (!isCpu(s, cpu)) return
+  // Something is still being shown to the table (a card, an Imprevisto): wait for it.
+  if (revealBusy.value) return void (timer = setTimeout(() => play(version), 300))
   // The host applies its own actions straight away, so a refused move shows up as an
   // unchanged version. That should never happen; if it does, fall back to the
   // simplest legal move rather than leave the table waiting for a CPU.

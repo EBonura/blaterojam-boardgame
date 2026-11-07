@@ -280,20 +280,38 @@
 .card-title.long { font-size: 5.2cqw; }
 .card.compact .card-title.long { font-size: 5.8cqw; }
 
-/* An Imprevisto: the CRT glitches and the crossed threshold's marker shakes, then shatters. */
-.crt.glitch .glass { animation: glitch .45s steps(2) 2; }
+/* An Imprevisto, step by step: the crossed threshold warns (row lit, box pulsing, marker shaking,
+   a banner over the CRT), then it breaks (marker shatters, CRT glitches), then the card shows. */
+.crt { position: relative; }
+.crt-alert { position: absolute; z-index: 6; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 16px; border-radius: 8px; background: rgba(40, 4, 16, .92); box-shadow: 0 0 0 2px var(--red), 0 0 24px rgba(255, 0, 77, .6);
+  text-align: center; pointer-events: none; animation: alert-in .35s cubic-bezier(.2, 1.6, .4, 1) both; }
+.crt-alert b { color: var(--red); font-size: clamp(14px, 4.6vw, 20px); animation: blink .6s steps(2) infinite; }
+.crt-alert span { color: var(--cream); font-size: clamp(10px, 3vw, 13px); }
+@keyframes alert-in { from { transform: translate(-50%, -50%) scale(.3); opacity: 0; } }
+@keyframes blink { 50% { opacity: .35; } }
+.crt.alarm .bar:not(.alert) { opacity: .35; transition: opacity .3s; }
+.bar.alert .bar-name { color: var(--red); animation: blink .6s steps(2) infinite; }
+.box.warning { z-index: 4; animation: alarm .6s ease-in-out infinite; box-shadow: 0 0 0 2px var(--red), 0 0 14px var(--red); }
+.box.warning::before { animation: marker-shake .3s ease-in-out infinite; }
+@keyframes alarm { 50% { background: rgba(255, 0, 77, .6); } }
+@keyframes marker-shake { 0%, 100% { transform: rotate(45deg) scale(1.8); } 25% { transform: rotate(45deg) translate(-2px, 1px) scale(2); } 75% { transform: rotate(45deg) translate(2px, -1px) scale(2); } }
+.crt.glitch .glass { animation: glitch .3s steps(2) 3; }
 .crt.glitch .glass::after { background: repeating-linear-gradient(transparent 0 2px, rgba(255, 0, 77, .25) 2px 3px); }
 @keyframes glitch { 0% { transform: translate(0); filter: none; } 25% { transform: translate(-3px, 1px) skewX(-2deg); filter: hue-rotate(40deg) saturate(2); }
   50% { transform: translate(3px, -1px); filter: hue-rotate(-30deg); } 75% { transform: translate(-1px, 2px) skewX(1deg); } 100% { transform: translate(0); } }
-.box.breaking { z-index: 4; animation: alarm .3s ease-in-out 4; box-shadow: 0 0 0 2px var(--red), 0 0 14px var(--red); }
-.box.breaking::before { animation: marker-shake .5s ease-in-out both; }
-@keyframes alarm { 50% { background: rgba(255, 0, 77, .55); } }
-@keyframes marker-shake { 0%, 100% { transform: rotate(45deg); } 20% { transform: rotate(45deg) translate(-2px, 1px) scale(1.6); } 40% { transform: rotate(45deg) translate(2px, -1px) scale(1.6); }
-  60% { transform: rotate(45deg) translate(-2px, -1px) scale(1.8); } 80% { transform: rotate(45deg) translate(1px, 2px) scale(1.8); } }
+.box.breaking { z-index: 4; background: rgba(255, 0, 77, .6); box-shadow: 0 0 0 2px var(--red), 0 0 20px var(--red); }
+.box.breaking::before { opacity: 0; }
 .shatter { position: absolute; left: 50%; top: -4px; width: 0; height: 0; pointer-events: none; }
-.shatter b { position: absolute; width: 5px; height: 5px; margin: -2.5px; background: var(--red); box-shadow: 0 0 6px var(--red); opacity: 0; animation: shard .7s .5s cubic-bezier(.2, .8, .4, 1) forwards; }
-.shatter .s1 { --dx: -16px; --dy: -14px; --r: -200deg; } .shatter .s2 { --dx: 16px; --dy: -16px; --r: 220deg; }
-.shatter .s3 { --dx: -12px; --dy: 12px; --r: 160deg; } .shatter .s4 { --dx: 14px; --dy: 10px; --r: -150deg; }
-.box.breaking::before { animation: marker-shake .5s ease-in-out both, vanish .01s .5s forwards; }
-@keyframes vanish { to { opacity: 0; } }
-@keyframes shard { 0% { opacity: 1; transform: translate(0, 0) rotate(45deg); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.4); } }
+.shatter b { position: absolute; width: 6px; height: 6px; margin: -3px; background: var(--red); box-shadow: 0 0 6px var(--red); animation: shard .9s cubic-bezier(.2, .8, .4, 1) forwards; }
+.shatter .s1 { --dx: -22px; --dy: -18px; --r: -200deg; } .shatter .s2 { --dx: 22px; --dy: -20px; --r: 220deg; }
+.shatter .s3 { --dx: -16px; --dy: 16px; --r: 160deg; } .shatter .s4 { --dx: 18px; --dy: 14px; --r: -150deg; }
+@keyframes shard { 0% { opacity: 1; transform: translate(0, 0) rotate(45deg) scale(1.6); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(.5); } }
+/* when the Imprevisto lands, its effect drains and fills the bars more slowly so it can be followed */
+.box.fill, .box.drain { animation-duration: .45s; }
+
+/* The revealed card is just a picture: a tap on it closes the reveal (a disabled button would swallow the tap). */
+.rv-card { pointer-events: none; }
+
+/* The burst: the word sits well inside the star, away from its points. */
+.burst { font-size: clamp(15px, 5vw, 22px); padding: 34px 58px; }

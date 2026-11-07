@@ -241,3 +241,32 @@ describe('events for the board animations', () => {
     expect(n.events.find((e) => e.kind === 'play')?.blind).toBe(true)
   })
 })
+
+describe('only going up sets off an Imprevisto', () => {
+  it('a decrease landing on a threshold does not', () => {
+    const g = game({ stats: { gd: 9, prog: 0, graf: 0, audio: 0 }, hand: ['rar#1'], impDeck: ['merge-conflict'] })
+    const n = play(g, { type: 'play', card: 'rar#1', stat: 'gd' })! // 9 -> 7
+    expect(n.stats.gd).toBe(7)
+    expect(kinds(n)).not.toContain('imprevisto')
+  })
+  it('a mixed card only counts the stats that go up', () => {
+    // Sprite 3D: +2 Grafica, -1 Game Design. gd 12 -> 11 lands on a threshold going down; graf 2 -> 4 crosses nothing.
+    const g = game({ stats: { gd: 12, prog: 0, graf: 2, audio: 0 }, hand: ['sprite-3d#1'], impDeck: ['merge-conflict'] })
+    const n = play(g, { type: 'play', card: 'sprite-3d#1' })!
+    expect(n.stats).toMatchObject({ gd: 11, graf: 4 })
+    expect(kinds(n)).not.toContain('imprevisto')
+  })
+  it('the Jolly moving a stat onto a threshold does not', () => {
+    const g = game({ stats: { gd: 3, prog: 0, graf: 0, audio: 0 }, hand: ['blatero#1'], impDeck: ['merge-conflict'] })
+    expect(kinds(play(g, { type: 'play', card: 'blatero#1', stat: 'gd', value: 11 })!)).not.toContain('imprevisto')
+  })
+})
+
+describe('imprevisto event', () => {
+  it('records the board before the Imprevisto changed it', () => {
+    const g = game({ stats: { gd: 0, prog: 5, graf: 0, audio: 0 }, hand: ['programmatore#1'], impDeck: ['merge-conflict'] })
+    const n = play(g, { type: 'play', card: 'programmatore#1' })!
+    expect(n.events.find((e) => e.kind === 'imprevisto')?.before).toMatchObject({ prog: 8 })
+    expect(n.stats.prog).toBe(2)
+  })
+})
