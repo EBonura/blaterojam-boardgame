@@ -13,6 +13,7 @@ import { turnClock } from '../net/turnTimer'
 import { Card, CardBack } from './Card'
 import { play } from './sound'
 import { MuteButton } from './MuteButton'
+import { Menu } from './Menu'
 import { SheetFacts } from './Vote'
 import './game.css'
 
@@ -77,17 +78,16 @@ export function GameScreen() {
 }
 
 function Players({ g }: { g: GameState }) {
-  const s = roomState.value!
   const turn = currentPlayer(g)
   return (
     <div class="pstrip">
-      <span class="ps-code px">{s.code}</span>
       {g.order.map((id) => (
         <span class={`ps ${id === turn ? 'turn' : ''} ${here().has(id) ? '' : 'away'} ${id === myId.value ? 'me' : ''}`}>
           {nameOf(id)}
           {cpu(id) && <i class="ps-cpu">CPU</i>}
         </span>
       ))}
+      <Menu />
     </div>
   )
 }

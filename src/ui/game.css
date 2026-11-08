@@ -5,7 +5,6 @@
 
 /* players */
 .pstrip { flex: none; display: flex; flex-wrap: nowrap; gap: 3px; align-items: center; font-size: clamp(8px, 2.5vw, 11px); overflow: hidden; }
-.ps-code { flex: none; color: var(--yellow); font-size: 1.1em; letter-spacing: .06em; margin-right: 2px; }
 .ps { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px clamp(3px, 1.2vw, 7px); border-radius: 6px; font-weight: 700; background: rgba(255, 255, 255, .12); transition: background .3s; }
 .ps.turn { background: var(--yellow); color: #000; animation: glow 1.6s ease-in-out infinite; }
 .ps.away { opacity: .45; text-decoration: line-through; }

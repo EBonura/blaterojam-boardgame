@@ -1,10 +1,10 @@
 import { muted, toggleMute } from './sound'
 
 /** Sound on or off, remembered on this device. A pixel speaker, with waves when on. */
-export function MuteButton({ floating }: { floating?: boolean }) {
+export function MuteButton() {
   const off = muted.value
   return (
-    <button type="button" class={`mute ${floating ? 'floating' : ''} ${off ? 'off' : ''}`} onClick={toggleMute}
+    <button type="button" class={`mute corner-btn ${off ? 'off' : ''}`} onClick={toggleMute}
       aria-pressed={off} aria-label={off ? 'Attiva i suoni' : 'Togli i suoni'} title={off ? 'Attiva i suoni' : 'Togli i suoni'}>
       <svg viewBox="0 0 16 16" width="16" height="16" shape-rendering="crispEdges" aria-hidden="true">
         <path d="M1 6h3l4-3v10l-4-3H1z" fill="currentColor" />

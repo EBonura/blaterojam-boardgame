@@ -19,7 +19,7 @@ export const LOSS_OVERFLOWS = 3
 export const MOVE_LIMIT = 48
 export const JOLLY_MAX = 15
 /** Seconds a person has for each move; when they run out, a random card from their hand is played for them. CPUs have no clock. */
-export const TURN_SECONDS = 15
+export const TURN_SECONDS = 48
 
 type Deltas = Partial<Record<Stat, number>>
 export type Effect =

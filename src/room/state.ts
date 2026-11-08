@@ -5,7 +5,7 @@ import { newGame, applyMove, MIN_PLAYERS, MAX_PLAYERS, SHEET_BY_ID, SHEETS, type
 /** `cpu` seats are played by whichever device is host (see src/net/cpuDriver.ts). */
 export type Player = { id: string; name: string; seat: number; cpu?: boolean }
 
-/** Names for CPU players, picked in order, skipping any already at the table. */
+/** Names for CPU players: a random one of those not already at the table. */
 export const CPU_NAMES = ['Turiddu', 'Rosalia', 'Totò', 'Concetta', 'Peppino', 'Ninetta', 'Saro', 'Mimì']
 
 export type RoomState = {
@@ -87,7 +87,8 @@ export function reduce(s: RoomState, a: Action, connectedNow: Set<string>): Room
       if (s.phase !== 'lobby' || s.players.length >= MAX_PLAYERS || hostOf(s, connectedNow) !== a.id) return null
       const seat = Math.max(-1, ...s.players.map((p) => p.seat)) + 1
       const taken = new Set(s.players.map((p) => p.name))
-      const name = CPU_NAMES.find((n) => !taken.has(n)) ?? `CPU ${seat + 1}`
+      const free = CPU_NAMES.filter((n) => !taken.has(n))
+      const name = free[Math.floor(Math.random() * free.length)] ?? `CPU ${seat + 1}`
       return bump({ players: [...s.players, { id: `cpu-${s.version}-${seat}`, name, seat, cpu: true }] })
     }
     case 'removeCpu': {
