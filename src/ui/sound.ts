@@ -8,9 +8,11 @@ export type Sound =
   | 'gioca-carta' | 'barra-sale' | 'carta-coperta' | 'carta-scartata'
   | 'allarme-soglia' | 'rottura' | 'imprevisto' | 'overflow'
   | 'tempo-scade' | 'mosse-finite' | 'vittoria' | 'sconfitta'
+  | 'menu-apri' | 'menu-chiudi' | 'menu-scelta'
 
 const ALL: Sound[] = ['tocco', 'scegli-carta', 'tocca-a-te', 'voto-scelta', 'voto-annuncio', 'gioca-carta', 'barra-sale', 'carta-coperta',
-  'carta-scartata', 'allarme-soglia', 'rottura', 'imprevisto', 'overflow', 'tempo-scade', 'mosse-finite', 'vittoria', 'sconfitta']
+  'carta-scartata', 'allarme-soglia', 'rottura', 'imprevisto', 'overflow', 'tempo-scade', 'mosse-finite', 'vittoria', 'sconfitta',
+  'menu-apri', 'menu-chiudi', 'menu-scelta']
 
 export const muted = signal(load<boolean>('muted') ?? false)
 export function toggleMute() {
@@ -63,11 +65,12 @@ export function play(s: Sound, delay = 0, volume = 1) {
 }
 
 // Taps: picking a card from the hand and voting for a videogame have their own sound; any other button clicks.
+// The menu, the rules and the credits play their own open and close sounds (see Menu.tsx and Sheet.tsx).
 addEventListener(
   'click',
   (e) => {
     const b = (e.target as Element | null)?.closest?.('button')
-    if (!b || (b as HTMLButtonElement).disabled) return
+    if (!b || (b as HTMLButtonElement).disabled || b.closest('.menu, .rules, [data-sheet-opener]')) return
     if (b.closest('.hand')) play('scegli-carta')
     else if (b.classList.contains('sheet')) play('voto-scelta')
     else if (!b.classList.contains('card')) play('tocco')

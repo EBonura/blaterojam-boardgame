@@ -4,6 +4,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { roomState, leaveRoom } from '../net/session'
 import { rulesOpen } from './Rules'
 import { creditsOpen } from './Crediti'
+import { play } from './sound'
 
 /** Three bars (like Palermo Drive's menu), drawn on the pixel grid. */
 const MenuIcon = () => (
@@ -21,14 +22,16 @@ const RulesIcon = () => (
 /** Opens the rules (the start screen's icon). */
 export function RulesButton() {
   return (
-    <button type="button" class="corner-btn" aria-label="Regolamento" title="Regolamento" onClick={() => (rulesOpen.value = true)}>
+    <button type="button" class="corner-btn" data-sheet-opener aria-label="Regolamento" title="Regolamento" onClick={() => (rulesOpen.value = true)}>
       <RulesIcon />
     </button>
   )
 }
 
 export function Menu() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpenState] = useState(false)
+  // Opening and closing the menu have their own sounds; closing it to show a page doesn't (the page plays its own).
+  const setOpen = (v: boolean, quiet = false) => (quiet || play(v ? 'menu-apri' : 'menu-chiudi'), setOpenState(v))
   const code = roomState.value?.code
   useEffect(() => {
     if (!open) return
@@ -46,13 +49,13 @@ export function Menu() {
       {open && (
         <div class="menu-panel parch" role="menu">
           {code && <div class="menu-code">Stanza <b>{code}</b></div>}
-          <button type="button" role="menuitem" onClick={() => ((rulesOpen.value = true), setOpen(false))}>
+          <button type="button" role="menuitem" onClick={() => ((rulesOpen.value = true), setOpen(false, true))}>
             <RulesIcon /> Regolamento
           </button>
-          <button type="button" role="menuitem" onClick={() => ((creditsOpen.value = true), setOpen(false))}>
+          <button type="button" role="menuitem" onClick={() => ((creditsOpen.value = true), setOpen(false, true))}>
             Crediti
           </button>
-          <button type="button" role="menuitem" onClick={() => (setOpen(false), leaveRoom())}>
+          <button type="button" role="menuitem" onClick={() => (play('menu-scelta'), setOpen(false, true), leaveRoom())}>
             Torna alla schermata iniziale
           </button>
           {code && <p class="menu-note">Il tuo posto resta: rientri con il codice {code}.</p>}

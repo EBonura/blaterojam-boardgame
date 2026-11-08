@@ -1,11 +1,18 @@
 // An overlay page over the start screen or the game (the rules, the credits): a title, a close button,
 // a scrolling body. Closes with the X, a tap outside it, or Escape.
-import { useEffect } from 'preact/hooks'
+import { useEffect, useRef } from 'preact/hooks'
+import { play } from './sound'
 import type { Signal } from '@preact/signals'
 import type { ComponentChildren } from 'preact'
 
 export function Sheet({ open, title, children }: { open: Signal<boolean>; title: string; children: ComponentChildren }) {
   const shown = open.value
+  // Its own sound when it opens and when it closes (however it closes).
+  const was = useRef(shown)
+  useEffect(() => {
+    if (shown !== was.current) play(shown ? 'menu-apri' : 'menu-chiudi')
+    was.current = shown
+  }, [shown])
   useEffect(() => {
     if (!shown) return
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && (open.value = false)
