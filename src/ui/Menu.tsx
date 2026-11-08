@@ -1,8 +1,9 @@
-// The menu in the top right corner (in a room): the rules, the room code, and the way back to the start screen.
+// The menu in the top right corner (in a room): the rules, the credits, the room code, and the way back to the start screen.
 // On the start screen there is no menu, just the rules.
 import { useEffect, useState } from 'preact/hooks'
 import { roomState, leaveRoom } from '../net/session'
 import { rulesOpen } from './Rules'
+import { creditsOpen } from './Crediti'
 
 /** Three bars (like Palermo Drive's menu), drawn on the pixel grid. */
 const MenuIcon = () => (
@@ -47,6 +48,9 @@ export function Menu() {
           {code && <div class="menu-code">Stanza <b>{code}</b></div>}
           <button type="button" role="menuitem" onClick={() => ((rulesOpen.value = true), setOpen(false))}>
             <RulesIcon /> Regolamento
+          </button>
+          <button type="button" role="menuitem" onClick={() => ((creditsOpen.value = true), setOpen(false))}>
+            Crediti
           </button>
           <button type="button" role="menuitem" onClick={() => (setOpen(false), leaveRoom())}>
             Torna alla schermata iniziale

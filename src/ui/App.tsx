@@ -10,6 +10,7 @@ import { Vote } from './Vote'
 import { MuteButton } from './MuteButton'
 import { Menu, RulesButton } from './Menu'
 import { Rules } from './Rules'
+import { Crediti } from './Crediti'
 
 export function App() {
   const s = roomState.value
@@ -23,6 +24,7 @@ export function App() {
         </div>
       )}
       <Rules />
+      <Crediti />
       <main class="screen">
         {status.value === 'idle' ? <Home /> : !s ? <Searching /> : s.phase === 'lobby' ? <Lobby /> : s.phase === 'voting' ? <InVote /> : <InGame />}
       </main>

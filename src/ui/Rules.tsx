@@ -1,7 +1,7 @@
 // The rules, as an overlay over the start screen or the game. The text is docs/regole.md itself (one source),
 // without the notes meant for us rather than the players (the decisions of 7 November and the line about them).
 import { signal } from '@preact/signals'
-import { useEffect } from 'preact/hooks'
+import { Sheet } from './Sheet'
 import type { ComponentChildren } from 'preact'
 import doc from '../../docs/regole.md?raw'
 
@@ -80,27 +80,9 @@ function block(b: Block) {
 }
 
 export function Rules() {
-  const open = rulesOpen.value
-  useEffect(() => {
-    if (!open) return
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && (rulesOpen.value = false)
-    addEventListener('keydown', esc)
-    return () => removeEventListener('keydown', esc)
-  }, [open])
-  if (!open) return null
   return (
-    <div class="rules" role="dialog" aria-modal="true" aria-label="Regolamento" onClick={(e) => e.target === e.currentTarget && (rulesOpen.value = false)}>
-      <div class="rules-sheet parch">
-        <header>
-          <h2 class="px">Regolamento</h2>
-          <button type="button" class="rules-close" aria-label="Chiudi il regolamento" onClick={() => (rulesOpen.value = false)}>
-            X
-          </button>
-        </header>
-        <div class="rules-body">
-          {BLOCKS.map(block)}
-        </div>
-      </div>
-    </div>
+    <Sheet open={rulesOpen} title="Regolamento">
+      {BLOCKS.map(block)}
+    </Sheet>
   )
 }

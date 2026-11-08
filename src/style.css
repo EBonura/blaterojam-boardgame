@@ -141,7 +141,6 @@ h2 { margin: 6px 0 0; font-size: 18px; }
 .mute { flex: none; display: grid; place-items: center; width: 30px; height: 26px; min-height: 0; padding: 0; border-radius: 6px;
   color: var(--cream); background: rgba(255, 255, 255, .12); box-shadow: none; }
 .mute.off { color: var(--muted); }
-.credits .sfx-credit { font-size: 9px; opacity: .75; }
 
 /* top right: rules (start screen) or menu (in a room), and sound */
 .corner { position: fixed; z-index: 30; top: calc(env(safe-area-inset-top, 0px) + 8px); right: max(10px, env(safe-area-inset-right, 0px)); display: flex; gap: 6px; }
@@ -179,3 +178,4 @@ h2 { margin: 6px 0 0; font-size: 18px; }
 
 /* screens under the corner buttons keep clear of them */
 .lobby, .vote, .center { padding-top: calc(env(safe-area-inset-top, 0px) + 48px); }
+.rules-body a { color: #1d5b9b; overflow-wrap: anywhere; }
