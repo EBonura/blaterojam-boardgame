@@ -10,12 +10,12 @@ Prima di iniziare si sceglie la **Scheda Videogioco**: ogni giocatore vota fino 
 
 ## Plancia
 
-Quattro slider, uno per statistica, con valori interi da 0 a 20. Si parte da 0.
+Quattro barre, una per statistica, con valori interi da 0 a 20 (una tacca per punto). Si parte da 0.
 
 | Regione | Valori | Effetto |
 |---|---|---|
 | Memoria libera | 0–15 | Progressione normale |
-| Buffer | 16–19 | Finché almeno uno slider è nel Buffer, si possono giocare solo carte **Base** |
+| Buffer | 16–19 | Finché almeno una barra è nel Buffer, si possono giocare solo carte **Base** |
 | Overflow | 20 | La statistica torna subito a 0; i punti in più si perdono |
 
 Le statistiche non scendono mai sotto 0.
@@ -50,7 +50,7 @@ Il primo giocatore è scelto a caso.
 
 ## Decisioni prese il 7 novembre 2026
 
-- Giocatori: da 4 a 6. Slider a 0 all'inizio, primo giocatore a caso.
+- Giocatori: da 4 a 6. Barre a 0 all'inizio, primo giocatore a caso.
 - Sconfitta: 3 statistiche diverse in Overflow nel corso della partita.
 - Nel Buffer senza carte Base in mano: una ripescata automatica; se ancora niente, il turno passa.
 - Da confermare (aggiunta nel gioco digitale): se al momento della ripescata nel mazzo non c'è più nessuna carta Base, prima si rimescolano gli scarti nel mazzo. Le carte in mano tornano sempre nel mazzo, quindi il mazzo non finisce quasi mai: senza questa regola, una volta giocate tutte le carte Base il tavolo resterebbe bloccato nel Buffer per sempre.
