@@ -60,6 +60,15 @@ const VARIANTS: { key: string; name: string; apply: (d: Data) => void }[] = [
       d.play.push(newCard('ottimizzazione', 'Ottimizzazione', 1, 'speciale', { graf: -1, audio: -1 }))
     },
   },
+  {
+    key: 'H', name: 'Scelto l\'8 novembre: tutte le carte di prima (Spaghetti code senza -1 Audio) + le 3 carte nuove: 63 carte',
+    apply: (d) => {
+      set(d, 'spaghetti-code', { gd: -1, prog: 6, graf: -1 })
+      d.play.push(newCard('refactoring', 'Refactoring', 1, 'speciale', { gd: -1, prog: -1, graf: -1, audio: -1 }))
+      d.play.push(newCard('taglio-di-scope', 'Taglio di scope', 1, 'speciale', { gd: -2, prog: -1 }))
+      d.play.push(newCard('ottimizzazione', 'Ottimizzazione', 1, 'speciale', { graf: -1, audio: -1 }))
+    },
+  },
 ].filter((v) => !process.env.ONLY || process.env.ONLY.split(',').includes(v.key))
 
 const GAMES = Number(process.env.GAMES ?? 1000)
