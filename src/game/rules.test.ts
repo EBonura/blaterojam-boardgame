@@ -317,9 +317,21 @@ describe('time running out', () => {
   it('passes when no card in hand can be played', () => {
     const g = newGame(['a', 'b', 'c', 'd'], 3)
     g.stats = { gd: BUFFER_MIN, prog: 0, graf: 0, audio: 0 } // in the Buffer: Base cards only
-    g.hand = g.deck.concat(g.hand).filter((c) => playCard(c).level !== 'base').slice(0, 4)
+    g.hand = g.deck.concat(g.hand).filter((c) => !['base', 'jolly'].includes(playCard(c).level)).slice(0, 4)
     expect(g.hand.length).toBe(4)
     expect(g.hand.some((c) => isLegal(g, c))).toBe(false)
     expect(timeoutMove(g)).toEqual({ type: 'pass', timeout: true })
+  })
+})
+
+describe('the Buffer', () => {
+  it('allows Base cards and the BLATERO Jolly, not special or Mentor cards', () => {
+    const g = newGame(['a', 'b', 'c', 'd'], 9)
+    g.stats = { gd: BUFFER_MIN, prog: 0, graf: 0, audio: 0 }
+    const one = (level: string) => g.deck.concat(g.hand).find((c) => playCard(c).level === level)!
+    expect(isLegal(g, one('base'))).toBe(true)
+    expect(isLegal(g, one('jolly'))).toBe(true)
+    expect(isLegal(g, one('speciale'))).toBe(false)
+    expect(isLegal(g, one('mentor'))).toBe(false)
   })
 })

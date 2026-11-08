@@ -28,14 +28,18 @@ const card = (m: Move) => (m.type === 'play' ? m.card : null)
 
 describe('CPU strategy', () => {
   it('only picks a legal card, and passes when there is none', () => {
-    // Buffer: prog is 17, so only Base cards. The Jolly and Brainstorming are out.
-    const g = game({ stats: { gd: 13, prog: 17, graf: 0, audio: 0 }, hand: ['blatero#1', 'brainstorming#1', 'tavoletta-grafica#1'] })
+    // Buffer: prog is 17, so only Base cards and the BLATERO Jolly. Brainstorming and the Mentors are out.
+    const g = game({ stats: { gd: 13, prog: 17, graf: 0, audio: 0 }, hand: ['pico-8#1', 'brainstorming#1', 'tavoletta-grafica#1'] })
     expect(inBuffer(g)).toBe(true)
     const m = chooseMove(g)
     expect(card(m)).toBe('tavoletta-grafica#1')
     expect(applyMove(g, m, 'a', ALL)).not.toBeNull()
 
-    expect(chooseMove(game({ stats: { gd: 13, prog: 17, graf: 0, audio: 0 }, hand: ['blatero#1', 'pico-8#1'] }))).toEqual({ type: 'pass' })
+    expect(chooseMove(game({ stats: { gd: 13, prog: 17, graf: 0, audio: 0 }, hand: ['brainstorming#1', 'pico-8#1'] }))).toEqual({ type: 'pass' })
+    // The Jolly can always be played: with nothing else, the CPU plays it rather than passing.
+    const j = game({ stats: { gd: 13, prog: 17, graf: 0, audio: 0 }, hand: ['blatero#1', 'pico-8#1'] })
+    expect(card(chooseMove(j))).toBe('blatero#1')
+    expect(applyMove(j, chooseMove(j), 'a', ALL)).not.toBeNull()
   })
 
   it('prefers a card that hits the target exactly over one that overshoots', () => {

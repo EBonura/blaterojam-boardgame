@@ -15,7 +15,7 @@ Quattro barre, una per statistica, con valori interi da 0 a 20 (una tacca per pu
 | Regione | Valori | Effetto |
 |---|---|---|
 | Memoria libera | 0–15 | Progressione normale |
-| Buffer | 16–19 | Finché almeno una barra è nel Buffer, si possono giocare solo carte **Base** |
+| Buffer | 16–19 | Finché almeno una barra è nel Buffer, si possono giocare solo carte **Base** e il Jolly **BLATERO** |
 | Overflow | 20 | La statistica torna subito a 0; i punti in più si perdono |
 
 Le statistiche non scendono mai sotto 0.
@@ -55,7 +55,7 @@ Il primo giocatore è scelto a caso.
 - Nel Buffer senza carte Base in mano: una ripescata automatica; se ancora niente, il turno passa.
 - Da confermare (aggiunta nel gioco digitale): se al momento della ripescata nel mazzo non c'è più nessuna carta Base, prima si rimescolano gli scarti nel mazzo. Le carte in mano tornano sempre nel mazzo, quindi il mazzo non finisce quasi mai: senza questa regola, una volta giocate tutte le carte Base il tavolo resterebbe bloccato nel Buffer per sempre.
 - Blackout: se la carta pescata alla cieca non si può giocare (Buffer), non ha effetto e va negli scarti. Se la carta chiede una scelta, la scelta è casuale.
-- BLATERO (Jolly): valore da 0 a 15, e non attiva mai un Imprevisto.
+- BLATERO (Jolly): valore da 0 a 15, e non attiva mai un Imprevisto. Si può giocare sempre, anche nel Buffer (8 novembre).
 - Vittoria anche dopo l'effetto di un Imprevisto.
 - Crash improvviso: la plancia torna com'era prima dell'ultima carta giocata, Overflow compresi.
 - Minimo 0, nessun underflow.

@@ -128,7 +128,9 @@ export const currentPlayer = (g: GameState) => g.order[g.turn % g.order.length]
 export const sheetOf = (g: GameState) => SHEET_BY_ID.get(g.sheet)!
 /** Buffer: while any stat is 16 to 19, only Base cards can be played. */
 export const inBuffer = (g: GameState) => STATS.some((s) => g.stats[s] >= BUFFER_MIN && g.stats[s] < OVERFLOW)
-export const isLegal = (g: GameState, instance: string) => !inBuffer(g) || playCard(instance).level === 'base'
+/** In the Buffer only Base cards can be played, and the BLATERO Jolly, which can always be played. */
+const PLAYABLE_IN_BUFFER: Level[] = ['base', 'jolly']
+export const isLegal = (g: GameState, instance: string) => !inBuffer(g) || PLAYABLE_IN_BUFFER.includes(playCard(instance).level)
 export const needsStat = (instance: string) => ['choice', 'set'].includes(playCard(instance).effect.type)
 const hasLegal = (g: GameState) => g.hand.some((c) => isLegal(g, c))
 const isWin = (g: GameState) => STATS.every((s) => g.stats[s] === sheetOf(g).target[s])

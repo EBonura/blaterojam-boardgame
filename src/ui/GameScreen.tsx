@@ -266,7 +266,7 @@ function TurnBar({ g }: { g: GameState }) {
   // Your turn: a bell, once when it starts.
   useEffect(() => void (mine && g.result === 'playing' && play('tocca-a-te')), [g.turn, who])
   const notes: string[] = []
-  if (inBuffer(g)) notes.push('Buffer: solo carte Base')
+  if (inBuffer(g)) notes.push('Buffer: solo carte Base e BLATERO')
   if (g.blind) notes.push(mine ? 'Blackout! Tocca una carta coperta: la giochi alla cieca' : 'Blackout: carta coperta')
   if (g.toPlay > 1) notes.push(`Tempo quasi scaduto: ancora ${g.toPlay} carte`)
   const noLegal = mine && !g.blind && !g.hand.some((c) => isLegal(g, c))
