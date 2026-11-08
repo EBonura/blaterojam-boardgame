@@ -8,7 +8,7 @@ import { GameScreen } from './GameScreen'
 import { Credits } from './Credits'
 import { Vote } from './Vote'
 import { MuteButton } from './MuteButton'
-import { Menu, RulesButton } from './Menu'
+import { Menu } from './Menu'
 import { Rules } from './Rules'
 import { Crediti } from './Crediti'
 
@@ -16,10 +16,10 @@ export function App() {
   const s = roomState.value
   return (
     <div class="app">
-      {/* Top right: the rules on the start screen, the menu in a room (in the game it sits in the player strip). */}
+      {/* Top right: the menu and the sound (in the game the menu sits in the player strip, the sound on the TV). */}
       {(status.value === 'idle' || !s || s.phase !== 'playing') && (
         <div class="corner">
-          {status.value === 'idle' ? <RulesButton /> : <Menu />}
+          <Menu />
           <MuteButton />
         </div>
       )}

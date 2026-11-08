@@ -70,7 +70,7 @@ addEventListener(
   'click',
   (e) => {
     const b = (e.target as Element | null)?.closest?.('button')
-    if (!b || (b as HTMLButtonElement).disabled || b.closest('.menu, .rules, [data-sheet-opener]')) return
+    if (!b || (b as HTMLButtonElement).disabled || b.closest('.menu, .rules')) return
     if (b.closest('.hand')) play('scegli-carta')
     else if (b.classList.contains('sheet')) play('voto-scelta')
     else if (!b.classList.contains('card')) play('tocco')
