@@ -64,3 +64,16 @@ export function patch<T>(a: T, p: Patch | null): T {
   }
   return a
 }
+
+/** A short fingerprint of a value, the same whatever order its keys were added in (patched objects can differ in key order). */
+export function fingerprint(x: unknown): string {
+  const stable = (v: unknown): string =>
+    Array.isArray(v) ? `[${v.map(stable).join(',')}]`
+    : v && typeof v === 'object' ? `{${Object.keys(v).filter((k) => (v as Record<string, unknown>)[k] !== undefined).sort().map((k) => `${JSON.stringify(k)}:${stable((v as Record<string, unknown>)[k])}`).join(',')}}`
+    : JSON.stringify(v)
+  // FNV-1a, 32 bits
+  let h = 0x811c9dc5
+  const s = stable(x)
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193)
+  return (h >>> 0).toString(36)
+}

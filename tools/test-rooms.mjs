@@ -49,8 +49,15 @@ async function waitFor(d, pred, what, ms = 45000) {
     if (s && pred(s)) return s
     await new Promise((r) => setTimeout(r, 300))
   }
-  check(false, `${d.name}: timed out waiting for ${what}`)
-  return snap(d).catch(() => null)
+  const last = await snap(d).catch(() => null)
+  check(false, `${d.name}: timed out waiting for ${what} (last seen: ${JSON.stringify(last && { version: last.version, online: last.online, players: last.players, order: last.gameJson })}${d.page.evaluate ? ', net: ' + JSON.stringify(await d.page.evaluate(() => window.__room.debugInfo()).catch(() => null)) : ''})`)
+  // Everyone else's view too, to see where it stalled.
+  for (const o of globalThis.__devs ?? []) {
+    if (o === d || o.page.isClosed?.() || !o.page.evaluate) continue
+    const v = await o.page.evaluate(() => { const r = window.__room; const s = r.roomState.value; return { me: r.myId.value.slice(0, 6), version: s?.version, players: s?.players.map((p) => p.name + ':' + p.id.slice(0, 6)), recent: s?.recent?.slice(-3), host: r.debugInfo() } }).catch((e) => String(e))
+    log('  view of', o.name, JSON.stringify(v))
+  }
+  return last
 }
 const join = async (d, code) => {
   await d.page.locator('input[autocomplete=nickname]').fill(d.name)
@@ -69,6 +76,7 @@ const playTurn = (d) =>
 
 try {
   const devs = await Promise.all(['Anna', 'Bruno', 'Carla', 'Dario'].map(device))
+  globalThis.__devs = devs
   const [A, B, C, D] = devs
   await A.page.locator('input[autocomplete=nickname]').fill(A.name)
   await A.page.locator('button.primary').click()
@@ -133,8 +141,11 @@ try {
   await waitFor(A, (s) => s.online === 3, 'Anna notices Carla left', 30000)
   const C2 = await device('Carla')
   await join(C2, code)
-  const claim = await C2.page.waitForSelector('::-p-xpath(//div[@class="claim"]//button[contains(., "Carla")])', { timeout: 45000 })
-  await claim.click()
+  await C2.page.waitForSelector('::-p-xpath(//div[@class="claim"]//button[contains(., "Carla")])', { timeout: 45000 })
+  // The clock may have played a card for the absent Carla meanwhile: its reveal covers the screen, so close it first.
+  const covered = await C2.page.evaluate(() => { const n = document.querySelectorAll('.reveal').length; document.querySelectorAll('.reveal').forEach((r) => r.click()); return n })
+  if (covered) log('a reveal covered the screen on the new device; closed it before claiming')
+  await C2.page.evaluate(() => [...document.querySelectorAll('.claim button')].find((b) => b.textContent.includes('Carla')).click())
   s = await waitFor(C2, (s) => s.online === 4 && !s.gameJson.includes(carlaId), 'Carla takes her seat on the new device')
   check(s && s.players.includes('Carla'), 'new device took over the free seat')
   C2.id = s.me

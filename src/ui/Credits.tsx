@@ -10,6 +10,7 @@ export function Credits() {
         <img src="./brand/bonnie-studios.png" alt="Bonnie Studios" />
       </div>
       <span>{t('byStudios')}</span>
+      <span class="sfx-credit">{t('soundCredits')}</span>
     </div>
   )
 }

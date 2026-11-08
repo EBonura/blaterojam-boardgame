@@ -75,6 +75,10 @@
 .scale span { text-align: center; } .scale .zero { text-align: left; transform: translateX(-100%); }
 .bezel { display: flex; justify-content: space-between; align-items: center; padding: 3px 4px 0; }
 .bezel .brand { font-size: 9px; letter-spacing: .35em; color: #8a7d5c; }
+.bezel-left { display: flex; align-items: center; gap: 6px; }
+/* On the TV's frame, like its speaker: engraved, not a bright button. */
+.bezel .mute { width: 24px; height: 18px; color: #8a7d5c; background: rgba(0, 0, 0, .08); border-radius: 4px; }
+.bezel .mute.off { color: #b8ab88; }
 .of-count { display: flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 800; color: #8a3a2a; text-transform: uppercase; letter-spacing: .08em; }
 .of-count i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #a33; }
 .of-count i.used { background: radial-gradient(circle at 40% 35%, #ff6a5a, #a3161a); box-shadow: none; animation: pop-in .4s ease; }

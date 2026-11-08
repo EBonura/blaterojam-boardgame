@@ -7,11 +7,13 @@ import { MIN_PLAYERS, MAX_PLAYERS } from '../game/rules'
 import { GameScreen } from './GameScreen'
 import { Credits } from './Credits'
 import { Vote } from './Vote'
+import { MuteButton } from './MuteButton'
 
 export function App() {
   const s = roomState.value
   return (
     <div class="app">
+      {(!s || s.phase !== 'playing' || status.value === 'idle') && <MuteButton floating />}
       <main class="screen">
         {status.value === 'idle' ? <Home /> : !s ? <Searching /> : s.phase === 'lobby' ? <Lobby /> : s.phase === 'voting' ? <InVote /> : <InGame />}
       </main>

@@ -11,6 +11,8 @@ import {
 import { present, isCpu } from '../room/state'
 import { turnClock } from '../net/turnTimer'
 import { Card, CardBack } from './Card'
+import { play } from './sound'
+import { MuteButton } from './MuteButton'
 import { SheetFacts } from './Vote'
 import './game.css'
 
@@ -68,6 +70,7 @@ export function GameScreen() {
       {picked && <Stage key={picked.card} g={g} picked={picked} onPreview={setPreview} onClose={close} />}
       <Intro g={g} />
       <Reveal g={g} />
+      <Sounds g={g} />
       {g.result !== 'playing' && <EndScreen g={g} />}
     </section>
   )
@@ -181,7 +184,10 @@ function Crt({ g, preview }: { g: GameState; preview: Preview | null }) {
         </div>
       </div>
       <div class="bezel">
-        <span class="px brand">BLATERO</span>
+        <span class="bezel-left">
+          <span class="px brand">BLATERO</span>
+          <MuteButton />
+        </span>
         <span class="of-count">
           Overflow
           {Array.from({ length: LOSS_OVERFLOWS }, (_, i) => <i class={i < g.overflowed.length ? 'used' : ''} />)}
@@ -257,6 +263,8 @@ function TurnBar({ g }: { g: GameState }) {
   const who = currentPlayer(g)
   const mine = who === myId.value
   const away = !here().has(who)
+  // Your turn: a bell, once when it starts.
+  useEffect(() => void (mine && g.result === 'playing' && play('tocca-a-te')), [g.turn, who])
   const notes: string[] = []
   if (inBuffer(g)) notes.push('Buffer: solo carte Base')
   if (g.blind) notes.push(mine ? 'Blackout! Tocca una carta coperta: la giochi alla cieca' : 'Blackout: carta coperta')
@@ -266,7 +274,7 @@ function TurnBar({ g }: { g: GameState }) {
     <div class={`turnbar ${mine ? 'mine' : ''}`} key={`${g.turn}-${who}`}>
       <div class="tb-who px">
         {mine ? 'Tocca a te!' : `Tocca a ${nameOf(who)}`}
-        <Clock />
+        <Clock mine={mine} />
       </div>
       {cpu(who) && g.result === 'playing' && (
         <div class="tb-note thinking">
@@ -292,7 +300,7 @@ function TurnBar({ g }: { g: GameState }) {
 }
 
 /** Seconds left on the current person's move: held at the full time while the table watches the last move, red in the last five. */
-function Clock() {
+function Clock({ mine }: { mine: boolean }) {
   const c = turnClock.value
   const [, tick] = useState(0)
   useEffect(() => {
@@ -300,8 +308,10 @@ function Clock() {
     const i = setInterval(() => tick((n) => n + 1), 250)
     return () => clearInterval(i)
   }, [c])
+  const left = c ? Math.max(0, Math.ceil((c.end - Math.max(Date.now(), c.start)) / 1000)) : 0
+  // The last five seconds tick, on the phone of the player whose clock it is.
+  useEffect(() => void (mine && left > 0 && left <= 5 && play('tempo-scade')), [left])
   if (!c) return null
-  const left = Math.max(0, Math.ceil((c.end - Math.max(Date.now(), c.start)) / 1000))
   return <span class={`tb-clock ${left <= 5 ? 'low' : ''}`} role="timer" aria-label={`${left} secondi`}>{left}</span>
 }
 
@@ -470,6 +480,7 @@ function Intro({ g }: { g: GameState }) {
   useEffect(() => {
     introBusy.value = open
     if (!open) return
+    play('voto-annuncio')
     const timer = setTimeout(() => setOpen(false), INTRO_MS)
     return () => clearTimeout(timer)
   }, [open])
@@ -495,6 +506,31 @@ function Intro({ g }: { g: GameState }) {
       <div class="hint">{t('introTap')}</div>
     </div>
   )
+}
+
+/** Sounds for what happens on the board: a card played (face up or down), a card discarded, the bars filling, Overflow, the end. */
+function Sounds({ g }: { g: GameState }) {
+  const last = useRef(g.events.at(-1)?.seq ?? 0)
+  const stats = useRef(g.stats)
+  useEffect(() => {
+    const fresh = g.events.filter((e) => e.seq > last.current)
+    last.current = g.events.at(-1)?.seq ?? last.current
+    // What the played card did to the bars (an Imprevisto's own change comes later, with its card).
+    const imp = fresh.find((e) => e.kind === 'imprevisto' && e.before)
+    const after = imp?.before ?? g.stats
+    const up = Object.keys(after).reduce((n, k) => n + Math.max(0, after[k as Stat] - stats.current[k as Stat]), 0)
+    stats.current = g.stats
+    for (const e of fresh) {
+      if (e.kind === 'play') play(e.blind ? 'carta-coperta' : 'gioca-carta')
+      if (e.kind === 'illegal') play('carta-scartata')
+      if (e.kind === 'overflow') play('overflow', 250)
+      if (e.kind === 'won') play('vittoria', 400)
+      if (e.kind === 'lost') play('sconfitta', 400)
+      if (e.kind === 'deadline') play('mosse-finite', 300)
+    }
+    if (fresh.some((e) => e.kind === 'play')) for (let i = 0; i < Math.min(up, 8); i++) play('barra-sale', 220 + i * 70, 0.7)
+  }, [g.events.at(-1)?.seq])
+  return null
 }
 
 /**
@@ -529,12 +565,14 @@ function Reveal({ g }: { g: GameState }) {
     const timers: ReturnType<typeof setTimeout>[] = []
     const after = (ms: number, f: () => void) => timers.push(setTimeout(f, ms))
     const hold = cur.kind === 'imprevisto' ? IMPREVISTO_HOLD_MS : PLAY_HOLD_MS
-    const showCard = () => (setStep({ seq: cur.seq, s: 'card' }), after(hold, next))
+    const showCard = () => (setStep({ seq: cur.seq, s: 'card' }), cur.kind === 'imprevisto' && play('imprevisto'), after(hold, next))
     if (staged) {
       setStep({ seq: cur.seq, s: 'warn' })
+      play('allarme-soglia')
       breaking.value = { seq: cur.seq, hits: cur.hits!, phase: 'warn' }
       after(WARN_MS, () => {
         breaking.value = { seq: cur.seq, hits: cur.hits!, phase: 'break' }
+        play('rottura')
         after(BREAK_MS, () => ((breaking.value = null), showCard()))
       })
     } else showCard()

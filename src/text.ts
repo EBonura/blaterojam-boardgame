@@ -3,6 +3,7 @@ const strings = {
   title: 'BLATERO, il gioco da tavolo della Blatero Game Jam',
   subtitle: 'Il gioco da tavolo della game jam',
   byStudios: 'Un gioco KUDA Games & Bonnie Studios',
+  soundCredits: 'Suoni: Kenney e altri (CC0) · «UI Failed or Error» di ViRiX (CC BY 3.0)',
   yourName: 'Il tuo nome',
   createRoom: 'Crea una stanza',
   joinRoom: 'Entra',

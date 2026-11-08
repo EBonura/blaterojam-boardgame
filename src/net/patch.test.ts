@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { diff, patch } from './patch'
+import { diff, patch, fingerprint } from './patch'
 import { newRoom, reduce, type RoomState } from '../room/state'
 import { currentPlayer } from '../game/rules'
 import { chooseMove } from '../game/cpu'
@@ -15,6 +15,15 @@ describe('patches between room states', () => {
     roundTrip([1], [])
     expect(diff({ a: [1, 2] }, { a: [1, 2] })).toBeNull()
     expect(diff([1, 2, 3, 4], [3, 4, 5])).toEqual({ s: 2, t: [5] })
+  })
+
+  it('fingerprints by content, not by key order', () => {
+    expect(fingerprint({ a: 1, b: [1, { c: 2, d: 3 }] })).toBe(fingerprint({ b: [1, { d: 3, c: 2 }], a: 1 }))
+    expect(fingerprint({ a: 1, x: undefined })).toBe(fingerprint({ a: 1 }))
+    expect(fingerprint({ a: 1 })).not.toBe(fingerprint({ a: 2 }))
+    const before = { v: 1, list: [1, 2], gone: true }
+    const after = { v: 2, list: [2, 3], extra: 'x' }
+    expect(fingerprint(patch(before, diff(before, after)))).toBe(fingerprint(after))
   })
 
   it('rebuilds every state of whole games from patches, and stays small', () => {

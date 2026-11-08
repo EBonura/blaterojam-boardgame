@@ -31,9 +31,10 @@ butler push release/blatero-itch.zip bonnie-studios/blatero:html5   # publish to
 
 The rules live in `src/game/rules.ts` as a pure `(state, move) => state` function, tested in `src/game/rules.test.ts` (`npm test`). Card data is `src/cards/cards.json`; card art is pixel art written as code in `tools/cards/art/` (see `tools/cards/ART-BRIEF.md`), and `npm run cards` builds the game art and print-ready SVGs (63x88 mm with 3 mm bleed) into `print/`. Room and network code are in `src/room` and `src/net`.
 
-CPU players: the host can add them in the lobby ("Aggiungi CPU") to fill a table of 4 to 6. They are seats in the room state (`Player.cpu`), never host and never counted as disconnected. Whichever phone is host plays their turns after a short pause (`src/net/cpuDriver.ts`, `?cpuDelay=ms` to change it) using the strategy in `src/game/cpu.ts`.
+CPU players: the host can add them in the lobby ("Aggiungi CPU") to fill a table of 4 to 6. They are seats in the room state (`Player.cpu`), never host and never counted as disconnected. Whichever phone is host plays their turns after a short pause (`src/net/cpuDriver.ts`) using the strategy in `src/game/cpu.ts`.
 
 ## Credits
 
 - Game design, rules and cards: KUDA Games
 - Digital version: Emanuele Bonura
+- Sounds (`public/sfx`): Kenney (kenney.nl), HaelDB, Robin Lamb, qubodup, wobbleboxx, bart, Fupi and Oiboo, all CC0, from OpenGameArt; "UI Failed or Error" by ViRiX, CC BY 3.0, https://opengameart.org/content/ui-failed-or-error

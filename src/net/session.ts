@@ -12,7 +12,7 @@
 import { joinRoom, getRelaySockets, type Room } from 'trystero'
 import { signal, computed } from '@preact/signals'
 import { reduce, hostOf, newRoom, type Action, type RoomState } from '../room/state'
-import { diff, patch, type Patch } from './patch'
+import { diff, patch, fingerprint, type Patch } from './patch'
 import { load, save, deviceId } from '../storage'
 
 const APP_ID = 'blaterojam-boardgame-taranto-2026-v1'
@@ -39,10 +39,12 @@ const HEARTBEAT_MS = 4000
 const STALE_MS = 13000
 
 /** `p`: the protocol this device speaks. 2 sends patches instead of whole room states; a device without it gets whole states. */
-type Hello = { id: string; name: string; version: number; p?: number }
+/** `ask`: reply with your hello. `full`: send me your whole confirmed state (my copy doesn't match yours). */
+type Hello = { id: string; name: string; version: number; p?: number; ask?: boolean; full?: boolean }
 type Envelope = { nonce: string; action: Action }
 /** What changed from room version `from` to `to` (see ./patch). */
-type StatePatch = { from: number; to: number; p: Patch | null }
+/** `f`: fingerprint of the state it was made from, so a patch is never applied to a copy that only shares its version number. */
+type StatePatch = { from: number; to: number; f: string; p: Patch | null }
 const PROTO = 2
 const RETRIES = 4
 /** Actions remembered in the room state, so a resent one is never applied twice. */
@@ -107,8 +109,9 @@ let confirmed: RoomState | null = null
 let predictionTimer: ReturnType<typeof setTimeout> | undefined
 /** Protocol each peer speaks (from its hello). */
 const peerProto = new Map<string, number>()
-let lastSentAt = 0
 let lastPresence = ''
+/** The peer we asked for its whole state because our copy didn't match its patch: its answer is taken even at our version. */
+let resyncFrom: string | null = null
 let beats = 0
 /** Actions sent but not yet seen in the host's state; resent on every heartbeat. */
 const pending = new Map<string, { env: Envelope; tries: number }>()
@@ -258,22 +261,23 @@ function openRoom(c: string) {
   const presence = room.makeAction<string[]>('presence')
   sendPresence = () => presence.send([...connected.value])
   presence.onMessage = (ids, { peerId }) => {
-    lastSeen.set(peerId, Date.now())
+    heard(peerId)
     const s = roomState.value
     if (s && hostOf(s, connected.value) === peerToPlayer.get(peerId)) hostPresence.value = new Set(ids)
   }
 
   sendHello = (h, target) => hello.send(h, target ? { target } : undefined)
   sendState = (s, target) => state.send(s, target ? { target } : undefined)
-  sendPatch = (p) => ((lastSentAt = Date.now()), delta.send(p))
-  sendAct = (e) => ((lastSentAt = Date.now()), act.send(e))
+  sendPatch = (p) => delta.send(p)
+  sendAct = (e) => act.send(e)
 
   room.onPeerJoin = (peerId) => {
     lastSeen.set(peerId, Date.now())
     hadPeers = true
     netInfo.value = { ...netInfo.value, error: '' }
     sendHello(myHello(), peerId)
-    if (roomState.value) sendState(roomState.value, peerId)
+    // Only what the host confirmed: a move this device is still predicting must not become a newcomer's starting point.
+    if (confirmed) sendState(confirmed, peerId)
   }
   room.onPeerLeave = (peerId) => {
     peerToPlayer.delete(peerId)
@@ -283,6 +287,8 @@ function openRoom(c: string) {
   }
   hello.onMessage = (h, { peerId }) => {
     lastSeen.set(peerId, Date.now())
+    if (h.ask) sendHello(myHello(), peerId)
+    if (h.full && confirmed) sendState(confirmed, peerId)
     peerToPlayer.set(peerId, h.id)
     peerProto.set(peerId, h.p ?? 1)
     refreshConnected()
@@ -291,36 +297,34 @@ function openRoom(c: string) {
     if (confirmed && confirmed.version > h.version) sendState(confirmed, peerId)
   }
   state.onMessage = (s, { peerId }) => {
-    lastSeen.set(peerId, Date.now())
+    heard(peerId)
     if (s.code !== code) return
-    if (!confirmed || s.version > confirmed.version) {
+    const asked = peerId === resyncFrom && !!confirmed && s.version >= confirmed.version
+    if (!confirmed || s.version > confirmed.version || asked) {
+      if (asked) resyncFrom = null
       adopt(s)
       status.value = 'online'
       ensureSeated()
     }
   }
   delta.onMessage = (d, { peerId }) => {
-    lastSeen.set(peerId, Date.now())
+    heard(peerId)
     if (!confirmed || d.to <= confirmed.version) return
-    // Only on top of the exact version it was made from; otherwise ask for the whole state (our hello says how far we got).
-    if (d.from !== confirmed.version) return sendHello(myHello(), peerId)
+    // Only on top of the exact state it was made from; otherwise ask that peer for its whole state.
+    if (d.from !== confirmed.version || d.f !== fingerprint(confirmed)) return (resyncFrom = peerId), sendHello({ ...myHello(), full: true }, peerId)
     adopt(patch(confirmed, d.p))
     status.value = 'online'
     ensureSeated()
   }
   act.onMessage = (env, { peerId }) => {
-    lastSeen.set(peerId, Date.now())
+    heard(peerId)
     if (amHost.value) apply(env)
     else predict(env)
   }
-  ping.onMessage = (_, { peerId }) => {
-    lastSeen.set(peerId, Date.now())
-    if (!peerToPlayer.has(peerId)) sendHello(myHello(), peerId)
-  }
+  ping.onMessage = (_, { peerId }) => heard(peerId)
 
   heartbeat = setInterval(() => {
-    // Everyone needs to hear from us now and then to know we're here; anything we sent recently counts.
-    if (Date.now() - lastSentAt > HEARTBEAT_MS * 0.8) ping.send(0)
+    ping.send(0)
     refreshConnected()
     // Resend anything the host hasn't acknowledged (it may have been sent
     // before we were connected to the host, or while hosting changed hands).
@@ -334,7 +338,7 @@ function openRoom(c: string) {
     if (amHost.value) {
       // Who's connected, when it changes (and every third beat, for anyone who missed it).
       const now = [...connected.value].sort().join()
-      if (now !== lastPresence || ++beats % 3 === 0) (sendPresence(), (lastPresence = now), (lastSentAt = Date.now()))
+      if (now !== lastPresence || ++beats % 3 === 0) (sendPresence(), (lastPresence = now))
       hostPresence.value = connected.value
     }
   }, HEARTBEAT_MS)
@@ -354,6 +358,15 @@ function teardown(): Promise<unknown> {
   lastPresence = ''
   hostPresence.value = null
   return left
+}
+
+/**
+ * Any message from a peer means it's here. A peer we can't place (its hello was lost while the link
+ * was opening) gets ours, with a request for its own, so both sides know who is who.
+ */
+function heard(peerId: string) {
+  lastSeen.set(peerId, Date.now())
+  if (!peerToPlayer.has(peerId)) sendHello({ ...myHello(), ask: true }, peerId)
 }
 
 function myHello(): Hello {
@@ -377,7 +390,7 @@ function apply({ nonce, action }: Envelope) {
   next.recent = [...(s.recent ?? []), nonce].slice(-RECENT)
   adopt(next)
   // Everyone gets what changed; a device on the old protocol gets the whole state.
-  sendPatch({ from: s.version, to: next.version, p: diff(s, next) })
+  sendPatch({ from: s.version, to: next.version, f: fingerprint(s), p: diff(s, next) })
   for (const [peer, p] of peerProto) if (p < 2) sendState(next, peer)
 }
 
