@@ -1,0 +1,19 @@
+html, body { width: 630px; height: 500px; overflow: hidden; }
+.cover { position: relative; width: 630px; height: 500px; overflow: hidden; text-align: center; }
+.cover h1 { margin: 0; padding-top: 20px; font-size: 92px; line-height: 1; letter-spacing: .02em; text-shadow: 0 6px 0 #0b1022; }
+.cover h1 .c1 { color: var(--mint); } .cover h1 .c2 { color: var(--yellow); } .cover h1 .c3 { color: var(--pink); } .cover h1 .c4 { color: var(--blue); }
+.cover .sub { margin: 10px 0 0; font-size: 20px; font-weight: 700; color: var(--cream); text-transform: uppercase; }
+.cover .by { position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; margin: 0; padding: 34px 0 10px; font-size: 13px; color: var(--cream); text-transform: uppercase; letter-spacing: .08em;
+  background: linear-gradient(transparent, rgba(11, 16, 34, .92) 60%); }
+
+/* the fan: four cards behind, the BLATERO card in front, all rising from below the bottom edge */
+.fan { position: absolute; left: 50%; top: 186px; width: 0; height: 0; }
+.slot { position: absolute; width: 170px; left: -85px; top: 0; transform-origin: 50% 160%; }
+.slot .card { box-shadow: 0 14px 26px rgba(0, 0, 0, .55); }
+.s0 { transform: translateX(-44px) rotate(-34deg) translateY(30px); }
+.s1 { transform: translateX(-22px) rotate(-17deg) translateY(6px); }
+.s2 { transform: translateX(22px) rotate(17deg) translateY(6px); }
+.s3 { transform: translateX(44px) rotate(34deg) translateY(30px); }
+.hero-slot { width: 196px; left: -98px; top: -14px; }
+.hero-slot .hero-card { height: auto; width: 100%; animation: none; transform: none; cursor: default;
+  box-shadow: inset 0 0 0 2px #e6c25a, inset 0 0 0 4px #5a3a08, 0 20px 40px rgba(0, 0, 0, .6), 0 0 50px rgba(255, 119, 168, .35); }

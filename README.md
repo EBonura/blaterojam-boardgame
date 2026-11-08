@@ -27,6 +27,7 @@ npm run build        # builds dist/
 npm run zip          # release/blatero-itch.zip, ready to upload to itch.io
 node tools/test-zip.mjs  # serves the zip from a nested path like itch.io and runs the room test on it
 butler push release/blatero-itch.zip bonnie-studios/blatero:html5   # publish to https://bonnie-studios.itch.io/blatero
+node tools/shot-itch.mjs # the itch page's cover (tools/cover/) and phone screenshots of a real game, into release/itch/
 ```
 
 The rules live in `src/game/rules.ts` as a pure `(state, move) => state` function, tested in `src/game/rules.test.ts` (`npm test`). Card data is `src/cards/cards.json`; card art is pixel art written as code in `tools/cards/art/` (see `tools/cards/ART-BRIEF.md`), and `npm run cards` builds the game art and print-ready SVGs (63x88 mm with 3 mm bleed) into `print/`. Room and network code are in `src/room` and `src/net`.
