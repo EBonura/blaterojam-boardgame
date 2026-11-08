@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { SHEET_BY_ID, newGame, applyMove, currentPlayer, inBuffer, timeoutMove, isLegal, BUFFER_MIN, playCard, type GameState, type Move } from './rules'
+import { SHEET_BY_ID, PLAY_CARDS, newGame, applyMove, currentPlayer, inBuffer, timeoutMove, isLegal, BUFFER_MIN, playCard, type GameState, type Move } from './rules'
 
 // These tests check the rules, not the balance: pin Gestionale's targets so retuning the
 // game sheets (src/cards/cards.json) doesn't change what the tests expect.
@@ -28,9 +28,9 @@ const kinds = (g: GameState) => g.events.map((e) => e.kind)
 const after = (before: GameState, g: GameState) => g.events.filter((e) => e.seq > (before.events.at(-1)?.seq ?? 0))
 
 describe('setup', () => {
-  it('deals a 60-card deck, 15 Imprevisti and a 4-card hand', () => {
+  it('deals the whole deck, 15 Imprevisti and a 4-card hand', () => {
     const g = newGame(P, 1)
-    expect(g.deck.length + g.hand.length).toBe(60)
+    expect(g.deck.length + g.hand.length).toBe(PLAY_CARDS.reduce((n, c) => n + c.copies, 0))
     expect(g.impDeck).toHaveLength(15)
     expect(g.hand).toHaveLength(4)
     expect(g.stats).toEqual({ gd: 0, prog: 0, graf: 0, audio: 0 })

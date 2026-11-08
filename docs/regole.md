@@ -64,9 +64,10 @@ Il primo giocatore è scelto a caso.
 - Soglie degli Imprevisti: solo 7 e 13 (l'11 è stato tolto).
 - Limite di mosse: la partita è persa quando finiscono le mosse.
 - Imprevisti per statistica: Patch su patch porta Programmazione a 0; Troppi poligoni -10 Grafica; Solo un ritocco -7 Game Design; Audio clipping -5 Audio (prima tutti a 0).
+- Carte speciali e Mentor toccano al massimo 3 statistiche (8 novembre): Brainstorming non dà più +1 Audio, Spaghetti code non toglie più 1 Audio. Tre carte speciali nuove (una copia ciascuna, il mazzo passa a 63): Refactoring (-1 in ogni statistica, l'unica eccezione alla regola delle 3 statistiche), Taglio di scope, Ottimizzazione.
 - Ordine delle statistiche sulla plancia e sulla scheda: Programmazione, Game Design, Grafica, Audio (come nello schizzo della plancia). L'ordine di risoluzione resta Game Design, Programmazione, Grafica, Audio.
 
-## Mazzo di Gioco (60 carte)
+## Mazzo di Gioco (63 carte)
 
 | Carta | Copie | Cornice | Livello | Effetto |
 |---|---|---|---|---|
@@ -91,11 +92,14 @@ Il primo giocatore è scelto a caso.
 | Modello low-poly | 1 | Giallo | Speciale | +3 Grafica, +1 Audio, -2 Game Design |
 | Engine 2D | 1 | Giallo | Speciale | +2 Programmazione, +1 Game Design, -1 Grafica |
 | Grafica Placeholder | 1 | Giallo | Speciale | +3 Game Design, +1 Programmazione, -2 Grafica |
-| Brainstorming | 5 | Giallo | Speciale | +1 in ogni statistica |
+| Brainstorming | 5 | Giallo | Speciale | +1 Game Design, +1 Programmazione, +1 Grafica |
 | Sprite 3D | 1 | Giallo | Speciale | +2 Grafica, -1 Game Design |
+| Refactoring | 1 | Giallo | Speciale | -1 in ogni statistica |
+| Taglio di scope | 1 | Giallo | Speciale | -2 Game Design, -1 Programmazione |
+| Ottimizzazione | 1 | Giallo | Speciale | -1 Grafica, -1 Audio |
 | BLATERO | 3 | Arcobaleno | Jolly | Porta una statistica a un valore a scelta (da 0 a 15) |
 | PICO-8 | 1 | Argento | Mentor | +3 in una statistica a scelta |
-| Spaghetti code | 1 | Argento | Mentor | +6 Programmazione, -1 Game Design, -1 Grafica, -1 Audio |
+| Spaghetti code | 1 | Argento | Mentor | +6 Programmazione, -1 Game Design, -1 Grafica |
 | Animazione frame-by-frame | 1 | Argento | Mentor | +4 Grafica, +1 Game Design, -2 Programmazione |
 | Grayboxing | 1 | Argento | Mentor | +4 Game Design, +2 Programmazione, -2 Grafica |
 

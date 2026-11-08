@@ -43,7 +43,24 @@ const VARIANTS: { key: string; name: string; apply: (d: Data) => void }[] = [
   },
   { key: 'D', name: 'Max 3 + carte negative (speciali)', apply: (d) => convert(d, 'speciale') },
   { key: 'E', name: 'Max 3 + carte negative (Base, giocabili nel Buffer)', apply: (d) => convert(d, 'base') },
-]
+  {
+    key: 'F', name: 'Scelto: max 3 + Brainstorming x2, Refactoring, Taglio di scope, Ottimizzazione',
+    apply: (d) => {
+      convert(d, 'speciale')
+      d.play.find((c) => c.id === 'brainstorming')!.copies = 2
+      d.play.find((c) => c.id === 'refactoring')!.copies = 1
+    },
+  },
+  {
+    key: 'G', name: 'Tutte le carte di oggi (max 3) + Refactoring, Taglio di scope, Ottimizzazione: 63 carte',
+    apply: (d) => {
+      max3(d)
+      d.play.push(newCard('refactoring', 'Refactoring', 1, 'speciale', { gd: -1, prog: -1, graf: -1, audio: -1 }))
+      d.play.push(newCard('taglio-di-scope', 'Taglio di scope', 1, 'speciale', { gd: -2, prog: -1 }))
+      d.play.push(newCard('ottimizzazione', 'Ottimizzazione', 1, 'speciale', { graf: -1, audio: -1 }))
+    },
+  },
+].filter((v) => !process.env.ONLY || process.env.ONLY.split(',').includes(v.key))
 
 const GAMES = Number(process.env.GAMES ?? 1000)
 const PLAYERS = ['p1', 'p2', 'p3', 'p4']

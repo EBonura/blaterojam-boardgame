@@ -31,9 +31,12 @@ Le quattro Mentor hanno già la loro frase (scelte il 7 novembre).
 | Grafica Placeholder | Siamo onesti: non la cambieremo mai. *(tua)* |
 | Brainstorming | Nessuna idea è stupida. La tua è l'eccezione. *(tua)* |
 | Sprite 3D | È 3D se non lo guardi di lato. |
+| Refactoring | Ho riscritto tutto da capo. Fa le stesse cose. *(bozza, carta nuova)* |
+| Taglio di scope | Il multiplayer lo mettiamo nel DLC. *(bozza, carta nuova)* |
+| Ottimizzazione | 60 FPS garantiti. A 240p. *(bozza, carta nuova)* |
 | BLATERO | Blatero vede tutto. Anche il commit delle quattro di notte. |
 | PICO-8 (Mentor) | «Voglio fare un open world in 4K» / «Il massimo che posso fare è 16 colori.» *(già sulla carta)* |
-| Spaghetti code (Mentor) | «Dov’è la funzione che salva?» / «Sì.» *(scelta, sulla carta)* |
+| Spaghetti code (Mentor) | Null ragù exception *(scelta l'8 novembre, sulla carta)* |
 | Animazione frame-by-frame (Mentor) | «Puoi farlo più fluido?» / «Certo: torna tra una settimana.» *(scelta, sulla carta)* |
 | Grayboxing (Mentor) | Ogni livello è un grayboxing che ci ha creduto abbastanza. *(scelta, sulla carta)* |
 

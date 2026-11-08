@@ -181,9 +181,11 @@ function effect(card, top, bottom) {
     rows.forEach((r, i) => {
       const cy = top + step * (i + 0.5) + num * 0.36
       const fill = INK_TONE[r.tone]
-      const ls = Math.max(2.4, Math.min(3.4, num * 0.42))
+      // the label runs from x 32 to the parchment's edge (about 29 mm): a long word gets a smaller size
+      const label = r.label.toUpperCase()
+      const ls = Math.min(Math.max(2.4, Math.min(3.4, num * 0.42)), 29 / (label.length * 0.82))
       out += `<text x="30" y="${cy}" text-anchor="end" font-family="${SANS}" font-weight="700" font-size="${num}" fill="${fill}">${esc(r.num)}</text>`
-      out += `<text x="32" y="${cy - num * 0.36 + ls * 0.36}" font-family="${SANS}" font-weight="700" font-size="${ls}" fill="${fill}">${esc(r.label.toUpperCase())}</text>`
+      out += `<text x="32" y="${cy - num * 0.36 + ls * 0.36}" font-family="${SANS}" font-weight="700" font-size="${ls}" fill="${fill}">${esc(label)}</text>`
     })
   }
   if (quote.length) out += quoteText(quote, top + space + QUOTE)
